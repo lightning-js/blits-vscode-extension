@@ -1,0 +1,16 @@
+{
+  "fileTypes": ["js"],
+  "injectionSelector": "L:source.js -comment -string",
+  "patterns": [
+    {
+      "begin": "template\\s*:\\s*`",
+      "end": "`",
+      "patterns": [
+        {
+          "include": "text.html.derivative"
+        }
+      ]
+    }
+  ],
+  "scopeName": "inline.custom-bolt-html"
+}
