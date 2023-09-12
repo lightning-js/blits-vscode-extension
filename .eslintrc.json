@@ -6,6 +6,14 @@
 		"node": true,
 		"mocha": true
 	},
+	"plugins": [
+		"prettier"
+	],
+	"extends": [
+		"eslint:recommended",
+		"plugin:prettier/recommended",
+		"prettier"
+	],
 	"parserOptions": {
 		"ecmaVersion": 2018,
 		"ecmaFeatures": {
@@ -20,6 +28,34 @@
 		"no-unreachable": "warn",
 		"no-unused-vars": "warn",
 		"constructor-super": "warn",
-		"valid-typeof": "warn"
+		"valid-typeof": "warn",
+		"indent": [
+			"error",
+			2
+		],
+		"linebreak-style": [
+			"error",
+			"unix"
+		],
+		"quotes": [
+			"error",
+			"single"
+		],
+		"semi": [
+			"error",
+			"never"
+		],
+		"eqeqeq": "off",
+		"no-trailing-spaces": "off",
+		"padded-blocks": "off",
+		"prettier/prettier": [
+			"error",
+			{
+				"trailingComma": "es5",
+				"singleQuote": true,
+				"tabWidth": 2,
+				"semi": false
+			}
+		]
 	}
 }
