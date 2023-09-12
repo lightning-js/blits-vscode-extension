@@ -3,11 +3,15 @@
   "injectionSelector": "L:source.js -comment -string",
   "patterns": [
     {
-      "begin": "template\\s*:\\s*`",
-      "end": "`",
+      "begin": "template\\s*:\\s*[`']",
+      "end": "[`']",
       "patterns": [
         {
           "include": "text.html.derivative"
+        },
+        {
+          "match": ":",
+          "name": "punctuation.special.colon"
         }
       ]
     }
