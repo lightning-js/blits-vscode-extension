@@ -40,8 +40,8 @@ jobs:
     - name: Rename VSIX
       run: mv *.vsix ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
 
-    # Create GitHub Release and Upload VSIX
-    - name: Create GitHub Release and Upload VSIX
+    # Create GitHub Pre Release and Upload VSIX
+    - name: Create GitHub Pre Release and Upload VSIX
       run: |
         gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "Version ${{ env.EXTENSION_VERSION }} of ${{ env.EXTENSION_NAME }}"
+        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix --prerelease -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "Version ${{ env.EXTENSION_VERSION }} of ${{ env.EXTENSION_NAME }}"
