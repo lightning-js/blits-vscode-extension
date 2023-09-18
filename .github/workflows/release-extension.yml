@@ -40,19 +40,23 @@ jobs:
     - name: Rename VSIX
       run: mv *.vsix ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
 
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      with:
-        tag_name: v${{ env.EXTENSION_VERSION }}
-        release_name: ${{ env.EXTENSION_NAME }} v${{ env.EXTENSION_VERSION }}
-        draft: false
-        prerelease: false
+    - name: Capture PR Merge Message
+      id: capture_pr_msg
+      run: |
+        merge_msg=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed&sort=updated&direction=desc&per_page=1" | \
+          jq -r '.[0].title + "\n\n" + .[0].body')
+        echo "Captured PR merge message: $merge_msg"
+        echo "PR_MERGE_MSG=$merge_msg" >> $GITHUB_ENV
 
-    - name: Upload VSIX to GitHub Release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
-        asset_name: ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
-        asset_content_type: application/octet-stream
+    - name: Install GitHub CLI
+      run: |
+        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+        sudo apt-add-repository https://cli.github.com/packages
+        sudo apt update
+        sudo apt install gh
+
+    - name: Create GitHub Release and Upload VSIX
+      run: |
+        gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "${{ env.PR_MERGE_MSG }}"
