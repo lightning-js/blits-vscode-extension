@@ -15,24 +15,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const completionProviders = require('./completionProviders')
-const commands = require('./commands')
-
-function activate(context) {
-  // add completion provider for template section
-  context.subscriptions.push(completionProviders.templateAttributes)
-
-  // comment command wrapper for template section
-  context.subscriptions.push(commands.commentCommand)
-
-  console.log('bolt-template-highlighter has been activated.')
-}
-
-function deactivate() {
-  console.log('bolt-template-highlighter has been deactivated.')
-}
-
 module.exports = {
-  activate,
-  deactivate,
+  commentCommand: require('./commentCommand'),
 }
