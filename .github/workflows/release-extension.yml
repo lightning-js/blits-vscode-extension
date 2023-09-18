@@ -40,16 +40,8 @@ jobs:
     - name: Rename VSIX
       run: mv *.vsix ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
 
-    - name: Capture PR Merge Message
-      id: capture_pr_msg
-      run: |
-        merge_msg=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/pulls?state=closed&sort=updated&direction=desc&per_page=1" | \
-          jq -r '.[0].title + "\n\n" + .[0].body' | base64)
-        echo "PR_MERGE_MSG_BASE64=$merge_msg" >> $GITHUB_ENV
-
+    # Create GitHub Release and Upload VSIX
     - name: Create GitHub Release and Upload VSIX
       run: |
         gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-        decoded_merge_msg=$(echo "${{ env.PR_MERGE_MSG_BASE64 }}" | base64 --decode)
-        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "$decoded_merge_msg"
+        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "Version ${{ env.EXTENSION_VERSION }} of ${{ env.EXTENSION_NAME }}"
