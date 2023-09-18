@@ -1,0 +1,58 @@
+name: Release VSCode Extension
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+
+    - name: Install Dependencies
+      run: npm install
+
+    # Read package.json and set variables
+    - name: Read package.json
+      run: |
+        extension_name=$(node -p "require('./package.json').name")
+        extension_version=$(node -p "require('./package.json').version")
+        echo "EXTENSION_NAME=$extension_name" >> $GITHUB_ENV
+        echo "EXTENSION_VERSION=$extension_version" >> $GITHUB_ENV
+
+    # fixme: run tests
+    # - name: Run Tests
+    #   run: npm run test
+
+    - name: Package Extension
+      run: npx vsce package
+
+    # Rename the vsix file
+    - name: Rename VSIX
+      run: mv *.vsix ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      with:
+        tag_name: v${{ env.EXTENSION_VERSION }}
+        release_name: ${{ env.EXTENSION_NAME }} v${{ env.EXTENSION_VERSION }}
+        draft: false
+        prerelease: false
+
+    - name: Upload VSIX to GitHub Release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
+        asset_name: ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
+        asset_content_type: application/octet-stream

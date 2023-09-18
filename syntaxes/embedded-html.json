@@ -3,7 +3,7 @@
   "injectionSelector": "L:source.js -comment -string",
   "patterns": [
     {
-      "begin": "template\\s*:\\s*[`']",
+      "begin": "template\\s*:\\s*(\\/\\*.*?\\*\\/)?\\s*[`']",
       "end": "[`']",
       "patterns": [
         {
