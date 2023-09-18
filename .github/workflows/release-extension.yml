@@ -59,4 +59,4 @@ jobs:
       run: |
         gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
         decoded_merge_msg=$(echo "${{ env.PR_MERGE_MSG_BASE64 }}" | base64 --decode)
-        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "Release v${{ env.EXTENSION_VERSION }}" -n "$decoded_merge_msg"
+        gh release create v${{ env.EXTENSION_VERSION }} ./${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix -t "bolt-vscode v${{ env.EXTENSION_VERSION }}" -n "$decoded_merge_msg"
