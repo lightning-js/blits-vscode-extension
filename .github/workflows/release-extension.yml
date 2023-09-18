@@ -48,13 +48,6 @@ jobs:
           jq -r '.[0].title + "\n\n" + .[0].body' | base64)
         echo "PR_MERGE_MSG_BASE64=$merge_msg" >> $GITHUB_ENV
 
-    - name: Install GitHub CLI
-      run: |
-        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-        sudo apt-add-repository https://cli.github.com/packages
-        sudo apt update
-        sudo apt install gh
-
     - name: Create GitHub Release and Upload VSIX
       run: |
         gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
