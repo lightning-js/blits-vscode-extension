@@ -41,7 +41,7 @@ module.exports = vscode.languages.registerCompletionItemProvider(
         if (tagName) {
           // hardcoded for now, Blits will provide a map for rendererer props
           if (tagName === 'Element') {
-            return await completionItems.coreProps(
+            return await completionItems.elementProps(
               tagName,
               attributes,
               document,

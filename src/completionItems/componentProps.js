@@ -20,7 +20,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const parse = require('../parsers')
 const templateHelper = require('../helpers/template')
-const coreProps = require('./coreProps')
+const elementProps = require('./elementProps')
 
 module.exports = async (tag, attributes, doc, docAst) => {
   let completionItems = []
@@ -80,8 +80,8 @@ module.exports = async (tag, attributes, doc, docAst) => {
   }
 
   // always merge with core props
-  const coreCompletionItems = await coreProps(attributes)
-  completionItems = completionItems.concat(coreCompletionItems)
+  const elementCompletionItems = await elementProps(attributes)
+  completionItems = completionItems.concat(elementCompletionItems)
 
   return completionItems
 }
