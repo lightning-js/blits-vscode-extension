@@ -2,7 +2,7 @@
   "name": "blits-vscode",
   "displayName": "blits-vscode",
   "description": "Visual Studio Code extension for Blits",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "engines": {
     "vscode": "^1.81.0"
   },
