@@ -1,7 +1,7 @@
 {
-  "name": "bolt-vscode",
-  "displayName": "bolt-vscode",
-  "description": "Visual Studio Code extension for Bolt",
+  "name": "blits-vscode",
+  "displayName": "blits-vscode",
+  "description": "Visual Studio Code extension for Blits",
   "version": "0.3.0",
   "engines": {
     "vscode": "^1.81.0"
@@ -28,7 +28,7 @@
         "injectTo": [
           "source.js"
         ],
-        "scopeName": "inline.custom-bolt-html",
+        "scopeName": "inline.custom-blits-html",
         "path": "./syntaxes/embedded-html.json"
       }
     ],
@@ -48,7 +48,7 @@
       {
         "key": "ctrl+/",
         "mac": "cmd+/",
-        "command": "bolt-vscode.commentCommand",
+        "command": "blits-vscode.commentCommand",
         "when": "editorTextFocus && editorLangId == 'javascript'"
       }
     ]

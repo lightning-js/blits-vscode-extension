@@ -25,11 +25,11 @@ function activate(context) {
   // comment command wrapper for template section
   context.subscriptions.push(commands.commentCommand)
 
-  console.log('bolt-template-highlighter has been activated.')
+  console.log('blits-template-highlighter has been activated.')
 }
 
 function deactivate() {
-  console.log('bolt-template-highlighter has been deactivated.')
+  console.log('blits-template-highlighter has been deactivated.')
 }
 
 module.exports = {
