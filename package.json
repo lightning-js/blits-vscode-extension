@@ -3,7 +3,7 @@
   "publisher": "lightningjs",
   "displayName": "Lightning Blits",
   "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightning-js/blits-vscode-extension.git"
