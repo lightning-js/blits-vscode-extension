@@ -18,41 +18,30 @@
 const vscode = require('vscode')
 
 // temporary solution
-const coreNodeProps = [
+const elementProps = [
   'x',
   'y',
+  'w',
   'width',
+  'h',
   'height',
+  'z',
+  'zIndex',
   'alpha',
   'color',
-  'colorTop',
-  'colorBottom',
-  'colorLeft',
-  'colorRight',
-  'colorTl',
-  'colorTr',
-  'colorBl',
-  'colorBr',
   'parent',
-  'zIndex',
-  'texture',
-  'textureOptions',
-  'shader',
-  'shaderProps',
-  'zIndexLocked',
   'scale',
-  'mount',
-  'mountX',
-  'mountY',
-  'pivot',
-  'pivotX',
-  'pivotY',
   'rotation',
+  'mount',
+  'pivot',
+  'src',
+  'ref',
+  'effects'
 ]
 
 module.exports = async (attributes) => {
   let completionItems = []
-  coreNodeProps.forEach((prop) => {
+  elementProps.forEach((prop) => {
     if (!attributes.includes(prop)) {
       const completionItem = new vscode.CompletionItem(
         prop,
