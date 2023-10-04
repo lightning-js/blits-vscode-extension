@@ -20,7 +20,7 @@ const templateHelper = require('../helpers/template')
 const parse = require('../parsers')
 
 module.exports = vscode.commands.registerCommand(
-  'bolt-vscode.commentCommand',
+  'blits-vscode.commentCommand',
   async () => {
     const editor = vscode.window.activeTextEditor
 

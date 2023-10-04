@@ -39,7 +39,7 @@ module.exports = vscode.languages.registerCompletionItemProvider(
 
         // fixme: in some cases the content of a tag can be multiline
         if (tagName) {
-          // hardcoded for now, Bolt will provide a map for rendererer props
+          // hardcoded for now, Blits will provide a map for rendererer props
           if (tagName === 'Element') {
             return await completionItems.coreProps(
               tagName,
