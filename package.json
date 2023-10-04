@@ -1,14 +1,29 @@
 {
-  "name": "blits-vscode",
-  "displayName": "blits-vscode",
-  "description": "Visual Studio Code extension for Blits",
+  "name": "lightning-blits",
+  "publisher": "lightningjs",
+  "displayName": "Lightning Blits",
+  "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
   "version": "0.3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lightning-js/blits-vscode-extension.git"
+  },
   "engines": {
     "vscode": "^1.81.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "Lightning",
+    "LightningJS",
+    "Lightning 3.0",
+    "L3",
+    "L3.0",
+    "Blits",
+    "Blitz"
+  ],
+  "icon": "./icon.png",
   "activationEvents": [
     "onLanguage:javascript"
   ],
