@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
@@ -20,6 +20,9 @@ jobs:
 
     - name: Install Dependencies
       run: npm install
+
+    - name: Install vsce
+      run: npm install -g vsce
 
     # Read package.json and set variables
     - name: Read package.json
@@ -39,7 +42,6 @@ jobs:
     # Rename the vsix file
     - name: Rename VSIX
       run: mv *.vsix ${{ env.EXTENSION_NAME }}.v${{ env.EXTENSION_VERSION }}.vsix
-
 
     # Create GitHub Pre Release and Upload VSIX
     - name: Create GitHub Pre Release and Upload VSIX
