@@ -1,6 +1,6 @@
 {
-  "fileTypes": ["js"],
-  "injectionSelector": "L:source.js -comment -string",
+  "fileTypes": ["js", "ts"],
+  "injectionSelector": "L:source.js -comment -string, L:source.ts -comment -string",
   "patterns": [
     {
       "begin": "template\\s*:\\s*(\\/\\*.*?\\*\\/)?\\s*[`']",

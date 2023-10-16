@@ -21,12 +21,13 @@ const completionItems = require('../completionItems')
 const parse = require('../parsers')
 
 module.exports = vscode.languages.registerCompletionItemProvider(
-  { language: 'javascript' },
+  [{ language: 'javascript' }, { language: 'typescript' }],
   {
     // eslint-disable-next-line no-unused-vars
     async provideCompletionItems(document, position, token, context) {
       const currentDoc = document.getText()
-      const currentDocAst = parse.AST(currentDoc)
+      const fileExtension = document.uri.fsPath.split('.').pop()
+      const currentDocAst = parse.AST(currentDoc, fileExtension)
 
       if (
         templateHelper.isCursorInsideTemplate(document, currentDocAst, position)

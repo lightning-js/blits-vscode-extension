@@ -56,6 +56,7 @@ module.exports = async (tag, attributes, doc, docAst) => {
             completionItem.insertText = new vscode.SnippetString(
               `${prop.key}="$0"`
             )
+            completionItem.sortText = '0' + prop.key
             completionItems.push(completionItem)
           }
 
@@ -69,6 +70,7 @@ module.exports = async (tag, attributes, doc, docAst) => {
             reactiveCompletionItem.insertText = new vscode.SnippetString(
               `${prop.key}="${prop.default ? prop.default : ''}$0"`
             )
+            reactiveCompletionItem.sortText = '0' + `:${prop.key}`
             completionItems.push(reactiveCompletionItem)
           }
         })

@@ -3,7 +3,7 @@
   "publisher": "lightningjs",
   "displayName": "Lightning Blits",
   "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
-  "version": "0.3.1",
+  "version": "0.4.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightning-js/blits-vscode-extension.git"
@@ -25,7 +25,8 @@
   ],
   "icon": "./icon.png",
   "activationEvents": [
-    "onLanguage:javascript"
+    "onLanguage:javascript",
+    "onLanguage:typescript"
   ],
   "main": "./src/extension.js",
   "scripts": {
@@ -41,22 +42,11 @@
     "grammars": [
       {
         "injectTo": [
-          "source.js"
+          "source.js",
+          "source.ts"
         ],
         "scopeName": "inline.custom-blits-html",
         "path": "./syntaxes/embedded-html.json"
-      }
-    ],
-    "languages": [
-      {
-        "id": "javascript",
-        "extensions": [
-          ".js"
-        ],
-        "aliases": [
-          "JavaScript",
-          "javascript"
-        ]
       }
     ],
     "keybindings": [
@@ -64,7 +54,7 @@
         "key": "ctrl+/",
         "mac": "cmd+/",
         "command": "blits-vscode.commentCommand",
-        "when": "editorTextFocus && editorLangId == 'javascript'"
+        "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript')"
       }
     ]
   },

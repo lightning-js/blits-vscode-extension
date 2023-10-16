@@ -1,4 +1,4 @@
-# Lightning Blits VS Code extensions
+# Lightning Blits VS Code extension
 
 This is the official VSCode extension for the Lightning Blits framework.
 
