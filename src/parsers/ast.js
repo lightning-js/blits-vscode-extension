@@ -17,10 +17,16 @@
 
 const parser = require('@babel/parser')
 
-module.exports = (code) => {
+module.exports = (code, fileExtension) => {
+  let plugins = []
+  if (fileExtension === 'ts') {
+    plugins.push('typescript')
+  }
+
   try {
     return parser.parse(code, {
       sourceType: 'module',
+      plugins: plugins,
     })
   } catch (e) {
     console.error('error parsing AST')
