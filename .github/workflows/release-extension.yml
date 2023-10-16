@@ -22,7 +22,7 @@ jobs:
       run: npm install
 
     - name: Install vsce
-      run: npm install -g vsce
+      run: npm install -g @vscode/vsce
 
     # Read package.json and set variables
     - name: Read package.json
