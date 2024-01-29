@@ -51,7 +51,7 @@ module.exports = vscode.commands.registerCommand(
             endLine = selection.end.line
           }
 
-          const lineRanges = []
+          const isBlockSelection = endLine > startLine
 
           for (let i = startLine; i <= endLine; i++) {
             const line = document.lineAt(i)
@@ -60,20 +60,36 @@ module.exports = vscode.commands.registerCommand(
 
             // Check if the line is already an HTML comment
             if (isLineCommented(lineText)) {
-              // Remove the comment
-              lineText = lineText.replace(/<!-- (.*) -->/g, '$1')
+              // Remove the comment from single line comment
+              if (!isBlockSelection) {
+                lineText = lineText.replace(/<!-- (.*) -->/g, '$1')
+              } else {
+                if (i === startLine) {
+                  lineText = lineText.replace(/<!-- (.*)/g, '$1')
+                } else if (i === endLine) {
+                  lineText = lineText.replace(/(.*) -->/g, '$1')
+                }
+              }
             } else {
               // Add a comment
               if (isLineTemplateStart(lineText)) {
                 lineText = document.getText(selection)
                 selectionRange = selection
               }
-              lineText = `<!-- ${lineText} -->`
+
+              if (isBlockSelection) {
+                if (i === startLine) {
+                  lineText = `<!-- ${lineText}`
+                } else if (i === endLine) {
+                  lineText = `${lineText} -->`
+                }
+              } else {
+                lineText = `<!-- ${lineText} -->`
+              }
             }
 
             // Replace the line in the editor
             editBuilder.replace(selectionRange, lineText)
-            lineRanges.push(line.range)
           }
         })
       } else {
@@ -85,7 +101,7 @@ module.exports = vscode.commands.registerCommand(
 )
 
 const isLineCommented = (lineText) => {
-  return lineText.match(/<!-- .* -->/)
+  return lineText.match(/<!-- .* -->|<!-- .*|.* -->/)
 }
 
 const isLineTemplateStart = (lineText) => {
