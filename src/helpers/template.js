@@ -36,6 +36,44 @@ const findTemplateRange = (ast) => {
   return { start: 0, end: 0 }
 }
 
+// const getTemplateText = (editorText) => {
+//   const templateSectionRegex =
+//     /template\s*:\s*(?:\/\*.*?\*\/)?\s*[`']([\s\S]*)[`']/g
+//   const matches = templateSectionRegex.exec(editorText)
+
+//   if (matches && matches[1]) {
+//     return matches[1]
+//   }
+//   return ''
+// }
+
+const getTemplateText = (ast, sourceCode) => {
+  let templateTexts = []
+
+  if (ast) {
+    traverse(ast, {
+      ObjectProperty(path) {
+        if (path.node.key.name === 'template') {
+          const templateNode = path.node.value
+          // Extract the range of the template string
+          const start = templateNode.start
+          const end = templateNode.end
+
+          // Extract the text from the source code
+          const templateText = sourceCode.substring(start, end)
+          templateTexts.push({
+            start,
+            end,
+            template: templateText,
+          })
+        }
+      },
+    })
+  }
+
+  return templateTexts
+}
+
 const findComponentFileByName = (ast, tag) => {
   let file = null
   if (ast) {
@@ -103,4 +141,5 @@ module.exports = {
   isCursorInsideTemplate,
   getExistingTagAndAttributes,
   findComponentFileByName,
+  getTemplateText,
 }

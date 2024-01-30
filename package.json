@@ -56,12 +56,67 @@
         "command": "blits-vscode.commentCommand",
         "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript')"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Blits Extension Settings",
+      "properties": {
+        "blits.format.indent_size": {
+          "type": "number",
+          "default": 2,
+          "description": "Indentation size.",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "blits.format.indent_char": {
+          "type": "string",
+          "default": " ",
+          "description": "Indentation character."
+        },
+        "blits.format.indent_with_tabs": {
+          "type": "boolean",
+          "default": false,
+          "description": "Indent with tabs, overrides indent size and char."
+        },
+        "blits.format.eol": {
+          "type": "string",
+          "default": "\\n",
+          "description": "Character(s) to use as line terminators."
+        },
+        "blits.format.end_with_newline": {
+          "type": "boolean",
+          "default": false,
+          "description": "End output with newline."
+        },
+        "blits.format.preserve_newlines": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve line-breaks."
+        },
+        "blits.format.max_preserve_newlines": {
+          "type": "number",
+          "default": 1,
+          "description": "Number of line-breaks to be preserved in one chunk.",
+          "minimum": 0
+        },
+        "blits.format.wrap_line_length": {
+          "type": "number",
+          "default": 120,
+          "description": "Wrap lines that exceed N characters.",
+          "minimum": 0
+        },
+        "blits.format.indent_empty_lines": {
+          "type": "boolean",
+          "default": false,
+          "description": "Keep indentation on empty lines."
+        }
+      }
+    }
   },
   "dependencies": {
     "@babel/parser": "^7.22.11",
     "@babel/traverse": "^7.22.17",
-    "fs-extra": "^11.1.1"
+    "fs-extra": "^11.1.1",
+    "js-beautify": "^1.14.11"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
