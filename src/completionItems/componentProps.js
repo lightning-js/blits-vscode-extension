@@ -54,7 +54,7 @@ module.exports = async (tag, attributes, doc, docAst) => {
               vscode.CompletionItemKind.Property
             )
             completionItem.insertText = new vscode.SnippetString(
-              `${prop.key}="$0"`
+              `${prop.key}="${prop.default ? prop.default : ''}$0"`
             )
             completionItem.sortText = '0' + prop.key
             completionItems.push(completionItem)
