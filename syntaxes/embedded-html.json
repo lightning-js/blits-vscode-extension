@@ -1,5 +1,8 @@
 {
-  "fileTypes": ["js", "ts"],
+  "fileTypes": [
+    "js",
+    "ts"
+  ],
   "injectionSelector": "L:source.js -comment -string, L:source.ts -comment -string",
   "patterns": [
     {
@@ -12,6 +15,25 @@
         {
           "match": ":",
           "name": "punctuation.special.colon"
+        }
+      ]
+    },
+    {
+      "begin": "(:[A-Za-z0-9:.-_@]+)\\s*=\\s*\"",
+      "beginCaptures": {
+        "1": {
+          "name": "variable.language"
+        }
+      },
+      "end": "\"(?=\\s|>)",
+      "contentName": "string.quoted.double",
+      "patterns": [
+        {
+          "match": "\\$[A-Za-z0-9:.-_@]+",
+          "name": "variable.parameter"
+        },
+        {
+          "include": "source.js"
         }
       ]
     }
