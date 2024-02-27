@@ -36,7 +36,7 @@ const elementProps = [
   'pivot',
   'src',
   'ref',
-  'effects'
+  'effects',
 ]
 
 module.exports = async (attributes) => {
