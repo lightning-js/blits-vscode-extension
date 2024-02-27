@@ -15,28 +15,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const completionProviders = require('./completionProviders')
-const commands = require('./commands')
-const formatters = require('./formatters')
-
-function activate(context) {
-  // add completion provider for template section
-  context.subscriptions.push(completionProviders.templateAttributes)
-
-  // comment command wrapper for template section
-  context.subscriptions.push(commands.commentCommand)
-
-  // format template section on save
-  context.subscriptions.push(formatters.templateFormatterOnSave)
-
-  console.log('Lightning Blits has been activated.')
-}
-
-function deactivate() {
-  console.log('Lightning Blits has been deactivated.')
-}
-
 module.exports = {
-  activate,
-  deactivate,
+  templateFormatterOnSave: require('./templateFormatterOnSave'),
 }
