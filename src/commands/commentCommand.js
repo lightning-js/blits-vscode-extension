@@ -51,29 +51,48 @@ module.exports = vscode.commands.registerCommand(
             endLine = selection.end.line
           }
 
-          const lineRanges = []
+          const isBlockSelection = endLine > startLine
 
           for (let i = startLine; i <= endLine; i++) {
             const line = document.lineAt(i)
-            let lineText = line.text
+            let lineText = line.text.replace(/^\s*/, '')
             let selectionRange = line.range
+            const leadingWhitespace = line.text.match(/^\s*/)[0]
 
             // Check if the line is already an HTML comment
             if (isLineCommented(lineText)) {
-              // Remove the comment
-              lineText = lineText.replace(/<!-- (.*) -->/g, '$1')
+              // Remove the comment from single line comment
+              if (!isBlockSelection) {
+                lineText = line.text.replace(/^(\s*)<!-- (.*) -->/g, '$1$2')
+              } else {
+                if (i === startLine) {
+                  lineText = line.text.replace(/^(\s*)<!-- (.*)/g, '$1$2')
+                } else if (i === endLine) {
+                  lineText = line.text.replace(/(.*) -->/g, '$1')
+                }
+              }
             } else {
               // Add a comment
               if (isLineTemplateStart(lineText)) {
                 lineText = document.getText(selection)
                 selectionRange = selection
               }
-              lineText = `<!-- ${lineText} -->`
+
+              if (isBlockSelection) {
+                if (i === startLine) {
+                  lineText = `${leadingWhitespace}<!-- ${lineText}`
+                } else if (i === endLine) {
+                  lineText = `${leadingWhitespace}${lineText} -->`
+                } else {
+                  lineText = line.text
+                }
+              } else {
+                lineText = `${leadingWhitespace}<!-- ${lineText} -->`
+              }
             }
 
             // Replace the line in the editor
             editBuilder.replace(selectionRange, lineText)
-            lineRanges.push(line.range)
           }
         })
       } else {
@@ -85,7 +104,7 @@ module.exports = vscode.commands.registerCommand(
 )
 
 const isLineCommented = (lineText) => {
-  return lineText.match(/<!-- .* -->/)
+  return lineText.match(/<!-- .* -->|<!-- .*|.* -->/)
 }
 
 const isLineTemplateStart = (lineText) => {
