@@ -34,6 +34,15 @@ const configKeys = [
 ]
 
 module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
+  // check if auto format is enabled
+  const autoFormatEnabled = vscode.workspace
+    .getConfiguration('blits')
+    .get('autoFormat')
+
+  if (!autoFormatEnabled) {
+    return
+  }
+
   const document = event.document
   const currentDoc = document.getText()
   const fileExtension = document.uri.fsPath.split('.').pop()
@@ -61,7 +70,9 @@ module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
       const extraIndentation = ' '.repeat(4)
       formattedTemplate =
         extraIndentation +
-        formattedTemplate.replace(/\n/g, `\n${extraIndentation}`)
+        formattedTemplate
+          .replace(/\n/g, `\n${extraIndentation}`)
+          .replace(/[\t ]+$/, '  ') // indent 2 spaces if the last line only contains a newline/space/tab
 
       // add template key and possible comment back
       formattedTemplate = `${stringChar}\n${formattedTemplate}${stringChar}`
