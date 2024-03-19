@@ -60,9 +60,14 @@
     "configuration": {
       "title": "Blits Extension Settings",
       "properties": {
+        "blits.autoFormat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically format the document on save."
+        },
         "blits.format.printWidth": {
           "type": "number",
-          "default": 80,
+          "default": 120,
           "description": "The line length that the printer will wrap on",
           "minimum": 20,
           "maximum": 1000
