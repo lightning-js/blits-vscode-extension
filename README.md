@@ -26,11 +26,13 @@ The extension includes an auto-format feature for the template definitions in Bl
 
 When you save a Blits component file (.js or .ts), the extension automatically formats the template sections within the file. This ensures that your templates are consistently styled and easy to read. The formatting applies only to the template parts of your file, leaving the rest of your JavaScript or TypeScript code unchanged.
 
+You can disable this feature by setting the `blits.autoFormat` configuration option to `false`.
+
 The extension provides several configuration options to customize the auto-formatting feature. These settings allow you to tailor the formatting to your coding style and preferences.
 
 #### Available Settings
 
-###### Print Width (`blits.format.printWidth`): 80
+###### Print Width (`blits.format.printWidth`): 120
 The line length that the printer will wrap on. 
 
 ###### Tab Width (`blits.format.tabWidth`): 2
@@ -63,7 +65,7 @@ Put the `>` of a multi-line tag at the end of the last line instead of being alo
 
 #### Customizing Settings
 
-To customize these settings, follow these steps:
+To customize these settings, you can either modify the `.vscode/settings.json` file directly or use the VSCode settings UI. To do this using the settings UI, follow these steps:
 
 - Open your VSCode settings (either user or workspace settings).
 - Search for `Blits` to find all the relevant settings for the Blits extension.
