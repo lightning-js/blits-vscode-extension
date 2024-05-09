@@ -15,11 +15,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+const fileManager = require('./fileManager')
 const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
 
 function activate(context) {
+  // initiate file manager
+  fileManager.init(context)
+
+  // let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
+  //   event.contentChanges.forEach((change) => {
+  //     console.log(
+  //       `Change at range: ${change.range.start.line}:${change.range.start.character} - ${change.range.end.line}:${change.range.end.character}`
+  //     )
+  //     console.log(
+  //       `Replaced ${change.rangeLength} characters with '${change.text}'`
+  //     )
+  //   })
+  // })
+
+  // context.subscriptions.push(disposable)
+
   // add completion provider for template section
   context.subscriptions.push(completionProviders.templateAttributes)
 
@@ -33,6 +50,7 @@ function activate(context) {
 }
 
 function deactivate() {
+  fileManager.clearAllFiles()
   console.log('Lightning Blits has been deactivated.')
 }
 

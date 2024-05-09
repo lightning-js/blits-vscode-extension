@@ -36,7 +36,9 @@
     "vscode:prepublish": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "contributes": {
     "grammars": [
@@ -166,6 +168,7 @@
     "@types/node": "16.x",
     "@types/vscode": "^1.81.0",
     "@vscode/test-electron": "^2.3.4",
+    "@vscode/vsce": "^2.26.0",
     "esbuild": "^0.19.2",
     "eslint": "^8.47.0",
     "eslint-config-prettier": "^8.8.0",

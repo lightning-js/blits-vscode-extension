@@ -99,6 +99,58 @@ const getTemplateText = (ast, sourceCode) => {
   return templateTexts
 }
 
+const getTemplates = (ast, sourceCode) => {
+  let templateTexts = []
+
+  if (ast) {
+    traverse(ast, {
+      // Check for CallExpression nodes to identify Blits.Component or Blits.Application calls
+      CallExpression(path) {
+        const callee = path.node.callee
+        // Check if the callee is Blits.Component or Blits.Application
+        if (
+          callee.object &&
+          callee.object.name === 'Blits' &&
+          (callee.property.name === 'Component' ||
+            callee.property.name === 'Application')
+        ) {
+          let argIndex = callee.property.name === 'Component' ? 1 : 0 // Determine the argument index based on the method
+
+          // Ensure the target argument exists and is an object expression
+          if (
+            path.node.arguments.length > argIndex &&
+            path.node.arguments[argIndex].type === 'ObjectExpression'
+          ) {
+            const arg = path.node.arguments[argIndex]
+            arg.properties.forEach((property) => {
+              if (
+                property.key &&
+                property.key.name === 'template' &&
+                property.value.type === 'TemplateLiteral'
+              ) {
+                const templateNode = property.value
+                // Extract the range of the template string
+                const start = templateNode.start
+                const end = templateNode.end
+
+                // Extract the text from the source code
+                const templateText = sourceCode.substring(start, end)
+                templateTexts.push({
+                  start,
+                  end,
+                  template: templateText,
+                })
+              }
+            })
+          }
+        }
+      },
+    })
+  }
+
+  return templateTexts
+}
+
 const findComponentFileByName = (ast, tag) => {
   let file = null
   if (ast) {
@@ -167,4 +219,5 @@ module.exports = {
   getExistingTagAndAttributes,
   findComponentFileByName,
   getTemplateText,
+  getTemplates,
 }
