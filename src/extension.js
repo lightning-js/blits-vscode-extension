@@ -18,10 +18,15 @@
 const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
+const completionItems = require('./completionItems')
 
 function activate(context) {
-  // add completion provider for template section
-  context.subscriptions.push(completionProviders.templateAttributes)
+  // get element/renderer props from Blits codebase
+  console.log('Parsing element props from Blits codebase')
+  completionItems.elementProps.parseProps().then(() => {
+    // add completion provider for template section
+    context.subscriptions.push(completionProviders.templateAttributes)
+  })
 
   // comment command wrapper for template section
   context.subscriptions.push(commands.commentCommand)

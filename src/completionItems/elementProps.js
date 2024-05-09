@@ -16,31 +16,62 @@
  */
 
 const vscode = require('vscode')
+const traverse = require('@babel/traverse').default
+const fs = require('fs-extra')
+const parser = require('@babel/parser')
+const path = require('path')
 
-// temporary solution
-const elementProps = [
-  'x',
-  'y',
-  'w',
-  'width',
-  'h',
-  'height',
-  'z',
-  'zIndex',
-  'alpha',
-  'color',
-  'parent',
-  'scale',
-  'rotation',
-  'mount',
-  'pivot',
-  'src',
-  'ref',
-  'effects',
-]
+const elementProps = []
+let elementPropsParsed = false
 
-module.exports = async (attributes) => {
+const parseProps = async () => {
+  // get element/renderer props from Blits codebase
+  const projectRootPath = vscode.workspace.workspaceFolders[0].uri.fsPath
+  const blitsElementJsPath = path.join(
+    projectRootPath,
+    'node_modules/@lightningjs/blits/src/engines/L3/element.js'
+  )
+  const fileExists = await fs.pathExists(blitsElementJsPath)
+  if (!fileExists) {
+    console.error(
+      `Blits - element.js not found at ${blitsElementJsPath}. Please make sure you have the @lightningjs/blits package installed.`
+    )
+    return
+  }
+  const code = await fs.readFile(blitsElementJsPath, 'utf8')
+
+  // Parse the code to an AST
+  const ast = parser.parse(code, {
+    sourceType: 'module',
+    plugins: ['classProperties'], // Enable additional syntax features
+  })
+
+  // Traverse the AST to find the 'Props' object
+  traverse(ast, {
+    VariableDeclarator({ node }) {
+      // Check if the variable declarator is for 'Props'
+      if (node.id.name === 'Props' && node.init.type === 'ObjectExpression') {
+        // Traverse properties of the 'Props' object
+        node.init.properties.forEach((property) => {
+          if (property.type === 'ObjectMethod' && property.kind === 'set') {
+            // Extract the name of the property from setter methods
+            elementProps.push(property.key.name)
+          }
+        })
+      }
+    },
+  })
+
+  if (elementProps.length > 0) {
+    elementPropsParsed = true
+  }
+
+  console.log(`Got following prop names from Blits : ${elementProps}`)
+}
+
+const suggest = async (attributes) => {
   let completionItems = []
+  console.log('element props', elementProps)
   elementProps.forEach((prop) => {
     if (!attributes.includes(prop)) {
       const completionItem = new vscode.CompletionItem(
@@ -53,4 +84,14 @@ module.exports = async (attributes) => {
   })
 
   return completionItems
+}
+
+const isReady = () => {
+  return elementPropsParsed
+}
+
+module.exports = {
+  suggest,
+  parseProps,
+  isReady,
 }

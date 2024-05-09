@@ -64,8 +64,6 @@ module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
         ...config,
       })
 
-      console.log('formattedTemplate', formattedTemplate)
-
       // add extra indentation for all lines (4 spaces)
       const extraIndentation = ' '.repeat(4)
       formattedTemplate =

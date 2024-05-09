@@ -22,7 +22,7 @@ const parse = require('../parsers')
 const templateHelper = require('../helpers/template')
 const elementProps = require('./elementProps')
 
-module.exports = async (tag, attributes, doc, docAst) => {
+const suggest = async (tag, attributes, doc, docAst) => {
   let completionItems = []
 
   // Get the path of the current file
@@ -82,8 +82,12 @@ module.exports = async (tag, attributes, doc, docAst) => {
   }
 
   // always merge with core props
-  const elementCompletionItems = await elementProps(attributes)
+  const elementCompletionItems = await elementProps.suggest(attributes)
   completionItems = completionItems.concat(elementCompletionItems)
 
   return completionItems
+}
+
+module.exports = {
+  suggest,
 }

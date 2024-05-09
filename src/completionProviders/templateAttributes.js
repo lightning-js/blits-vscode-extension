@@ -40,17 +40,18 @@ module.exports = vscode.languages.registerCompletionItemProvider(
 
         // fixme: in some cases the content of a tag can be multiline
         if (tagName) {
-          // hardcoded for now, Blits will provide a map for rendererer props
+          // before suggesting items check if renderer props has been parsed
+          // parsing occurs on activation but if it failed we also need to check here
+          // just in case if blits package has been installed after activation
+          if (!completionItems.elementProps.isReady) {
+            await completionItems.elementProps.parseProps()
+          }
+
           if (tagName === 'Element') {
-            return await completionItems.elementProps(
-              tagName,
-              attributes,
-              document,
-              currentDocAst
-            )
+            return await completionItems.elementProps.suggest(attributes)
           } else {
             // get props for custom component
-            return await completionItems.componentProps(
+            return await completionItems.componentProps.suggest(
               tagName,
               attributes,
               document,
