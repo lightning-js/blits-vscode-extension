@@ -29,6 +29,12 @@ function activate(context) {
   // format template section on save
   context.subscriptions.push(formatters.templateFormatterOnSave)
 
+  // .blits file type
+  // const blitsDocumentSelector = [
+  //   { language: 'blits', scheme: 'file' },
+  //   { language: 'blits', scheme: 'untitled' },
+  // ]
+
   console.log('Lightning Blits has been activated.')
 }
 

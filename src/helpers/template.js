@@ -15,6 +15,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+const vscode = require('vscode')
 const traverse = require('@babel/traverse').default
 
 const findTemplateRange = (ast) => {
@@ -133,6 +134,17 @@ const isCursorInsideTemplate = (document, ast, position) => {
   return false
 }
 
+const isCursorInsideTag = (document, position) => {
+  // Extract the text from the start of the document to the cursor position
+  const start = new vscode.Position(0, 0)
+  const range = new vscode.Range(start, position)
+  const textUpToCursor = document.getText(range)
+  const result = /<[^>]*([\s\S]*?)$/.test(textUpToCursor)
+  console.log('isCursorInsideTag', result)
+  // Multiline regex to check for an unclosed opening tag before the cursor
+  return result
+}
+
 const getExistingTagAndAttributes = (line) => {
   let result = {
     tagName: null,
@@ -161,9 +173,64 @@ const getExistingTagAndAttributes = (line) => {
   return result
 }
 
+const getTagContext = (document, position) => {
+  const textBeforeCursor = document.getText(
+    new vscode.Range(new vscode.Position(0, 0), position)
+  )
+  const textAfterCursor = document.getText(
+    new vscode.Range(
+      position,
+      new vscode.Position(document.lineCount - 1, Number.MAX_VALUE)
+    )
+  )
+
+  let tagContext = {
+    insideTag: false,
+    tagName: null,
+    attributes: {},
+    tagType: null, // "opening", "closing", or "self-closing"
+  }
+
+  // This regex is now designed to find the last "<tag" before the cursor and the first closing ">" after the cursor.
+  // It captures opening, closing, and self-closing tags while considering multiline tags.
+  const tagRegex =
+    /<(\/*\w+)((?:\s+[\w:.]+(?:\s*=\s*"(?:\\"|[^"])*"|'(?:\\'|[^'])*'|[^\s'">]*))?)*\s*(\/?)>/gs
+  let lastOpeningTagBeforeCursorMatch = null
+  let match
+
+  // Find all tags before the cursor
+  while ((match = tagRegex.exec(textBeforeCursor)) !== null) {
+    lastOpeningTagBeforeCursorMatch = match // Keep updating until the last one before the cursor
+  }
+
+  // Check if the last matched tag before the cursor is actually an opening tag
+  if (
+    lastOpeningTagBeforeCursorMatch &&
+    !lastOpeningTagBeforeCursorMatch[1].startsWith('/')
+  ) {
+    tagContext.insideTag = true
+    tagContext.tagName = lastOpeningTagBeforeCursorMatch[1]
+    tagContext.tagType =
+      lastOpeningTagBeforeCursorMatch[3] === '/' ? 'self-closing' : 'opening'
+
+    // Parse attributes
+    const attributesString = lastOpeningTagBeforeCursorMatch[2]
+    const attrRegex =
+      /([\w:.]+)(?:\s*=\s*("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|(\S+)))?/g
+    let attrMatch
+    while ((attrMatch = attrRegex.exec(attributesString)) !== null) {
+      tagContext.attributes[attrMatch[1]] = attrMatch[2] || attrMatch[3] || true // Handle boolean attributes
+    }
+  }
+
+  return tagContext
+}
+
 module.exports = {
   findTemplateRange,
   isCursorInsideTemplate,
+  isCursorInsideTag,
+  getTagContext,
   getExistingTagAndAttributes,
   findComponentFileByName,
   getTemplateText,

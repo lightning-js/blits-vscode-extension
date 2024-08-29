@@ -39,6 +39,17 @@
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
   },
   "contributes": {
+
+    "languages": [{
+      "id": "blits",
+      "extensions": [".blits"],
+      "aliases": ["Blits", "blits"],
+      "configuration": "./languages/blits.json",
+      "icon": {
+          "light": "./languages/icons/blits-icon.svg",
+          "dark": "./languages/icons/blits-icon.svg"
+        }
+    }],
     "grammars": [
       {
         "injectTo": [
@@ -47,6 +58,11 @@
         ],
         "scopeName": "inline.custom-blits-html",
         "path": "./syntaxes/embedded-html.json"
+      },
+      {
+        "language": "blits",
+        "scopeName": "source.blits",
+        "path": "./syntaxes/blits.json"
       }
     ],
     "keybindings": [
