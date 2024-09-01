@@ -16,30 +16,82 @@
  */
 
 const vscode = require('vscode')
+const traverse = require('@babel/traverse').default
+const fs = require('fs-extra')
+const parser = require('@babel/parser')
+const path = require('path')
 
-// temporary solution
-const elementProps = [
-  'x',
-  'y',
-  'w',
-  'width',
-  'h',
-  'height',
-  'z',
-  'zIndex',
-  'alpha',
-  'color',
-  'parent',
-  'scale',
-  'rotation',
-  'mount',
-  'pivot',
-  'src',
-  'ref',
-  'effects',
-]
+const elementProps = []
+let elementPropsParsed = false
 
-module.exports = async (attributes) => {
+const parseProps = async () => {
+  // get element/renderer props from Blits codebase
+  const projectRootPath = vscode.workspace.workspaceFolders[0].uri.fsPath
+  const blitsElementJsPath = path.join(
+    projectRootPath,
+    'node_modules/@lightningjs/blits/src/engines/L3/element.js'
+  )
+  let code = ''
+  try {
+    const realPath = await fs.realpath(blitsElementJsPath)
+
+    const fileExists = await fs.pathExists(realPath)
+    if (!fileExists) {
+      console.error(
+        `Blits - element.js not found at ${blitsElementJsPath}. Please make sure you have the @lightningjs/blits package installed.`
+      )
+      return
+    }
+    code = await fs.readFile(realPath, 'utf8')
+  } catch (error) {
+    console.error(`Error resolving real path for ${blitsElementJsPath}:`, error)
+    return
+  }
+
+  // Parse the code to an AST
+  const ast = parser.parse(code, {
+    sourceType: 'module',
+    plugins: ['classProperties'], // Enable additional syntax features
+  })
+
+  // Traverse the AST to find the 'propsTransformer' object
+  traverse(ast, {
+    VariableDeclarator({ node }) {
+      // Check if the variable declarator is for 'propsTransformer'
+      if (
+        node.id.name === 'propsTransformer' &&
+        node.init.type === 'ObjectExpression'
+      ) {
+        // Traverse properties of the 'propsTransformer' object
+        node.init.properties.forEach((property) => {
+          if (
+            property.type === 'ObjectMethod' &&
+            property.kind === 'set' &&
+            property.key.type === 'Identifier'
+          ) {
+            // Extract the name of the setter method
+            elementProps.push(property.key.name)
+          }
+        })
+      }
+    },
+  })
+
+  if (elementProps.length > 0) {
+    elementPropsParsed = true
+  }
+
+  console.log(`Got following prop names from Blits : ${elementProps}`)
+}
+
+const suggest = async (attributes) => {
+  // before suggesting items check if renderer props has been parsed
+  // parsing occurs on activation but if it failed we also need to check here
+  // just in case if blits package has been installed after activation
+  if (!elementPropsParsed) {
+    await parseProps()
+  }
+
   let completionItems = []
   elementProps.forEach((prop) => {
     if (!attributes.includes(prop)) {
@@ -53,4 +105,14 @@ module.exports = async (attributes) => {
   })
 
   return completionItems
+}
+
+const isReady = () => {
+  return elementPropsParsed
+}
+
+module.exports = {
+  suggest,
+  parseProps,
+  isReady,
 }

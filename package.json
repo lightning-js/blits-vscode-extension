@@ -70,7 +70,7 @@
         "key": "ctrl+/",
         "mac": "cmd+/",
         "command": "blits-vscode.commentCommand",
-        "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript')"
+        "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript' || editorLangId == 'blits')"
       }
     ],
     "configuration": {

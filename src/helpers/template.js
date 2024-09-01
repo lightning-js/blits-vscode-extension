@@ -100,6 +100,84 @@ const getTemplateText = (ast, sourceCode) => {
   return templateTexts
 }
 
+const getTemplateTextForBlits = (
+  document,
+  text,
+  includeTemplateTags = false
+) => {
+  const templateRegex = /(<template>)([\s\S]*?)(<\/template>)/
+
+  const match = text.match(templateRegex)
+
+  if (match) {
+    const fullMatch = match[0]
+    const templateContent = match[2]
+
+    const startOffset = text.indexOf(fullMatch)
+    const endOffset = startOffset + fullMatch.length
+
+    if (includeTemplateTags) {
+      return {
+        start: startOffset,
+        end: endOffset,
+        template: fullMatch,
+      }
+    } else {
+      return {
+        start: startOffset + '<template>'.length,
+        end: endOffset - '</template>'.length,
+        template: templateContent,
+      }
+    }
+  }
+
+  return null
+}
+
+const getBlitsFileWithoutLicense = (text) => {
+  // Regular expression to match a block comment at the start of the file
+  const licenseRegex = /^\s*\/\*[\s\S]*?\*\/\s*/
+
+  const match = text.match(licenseRegex)
+
+  if (match) {
+    const licenseEnd = match[0].length
+    const contentWithoutLicense = text.slice(licenseEnd).trim()
+
+    return {
+      content: contentWithoutLicense,
+      start: licenseEnd,
+      end: text.length,
+    }
+  } else {
+    // If no license found, return the original text with positions
+    return {
+      content: text,
+      start: 0,
+      end: text.length,
+    }
+  }
+}
+
+const getScriptContentForBlits = (text) => {
+  // Regular expression to match the script tag and its content
+  const scriptRegex =
+    /<script(?:\s+lang\s*=\s*["']?(ts)["']?)?\s*>([\s\S]*?)<\/script>/i
+
+  const match = text.match(scriptRegex)
+
+  if (match) {
+    const [, lang, content] = match
+
+    return {
+      content: content.trim(),
+      language: lang === 'ts' ? 'ts' : 'js',
+    }
+  }
+
+  return null // No script tag found
+}
+
 const findComponentFileByName = (ast, tag) => {
   let file = null
   if (ast) {
@@ -131,6 +209,24 @@ const isCursorInsideTemplate = (document, ast, position) => {
       return true
     }
   }
+  return false
+}
+
+const isCursorInsideTemplateForBlits = (document, text, position) => {
+  const cursorOffset = document.offsetAt(position)
+
+  const templateStartMatch = text.match(/<template>/)
+  const templateEndMatch = text.match(/<\/template>/)
+
+  if (templateStartMatch && templateEndMatch) {
+    const templateStart = templateStartMatch.index + '<template>'.length
+    const templateEnd = templateEndMatch.index
+
+    if (cursorOffset > templateStart && cursorOffset < templateEnd) {
+      return true
+    }
+  }
+
   return false
 }
 
@@ -229,9 +325,13 @@ const getTagContext = (document, position) => {
 module.exports = {
   findTemplateRange,
   isCursorInsideTemplate,
+  isCursorInsideTemplateForBlits,
   isCursorInsideTag,
   getTagContext,
   getExistingTagAndAttributes,
   findComponentFileByName,
   getTemplateText,
+  getScriptContentForBlits,
+  getTemplateTextForBlits,
+  getBlitsFileWithoutLicense,
 }
