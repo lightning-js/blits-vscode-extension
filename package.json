@@ -63,6 +63,16 @@
         "language": "blits",
         "scopeName": "source.blits",
         "path": "./syntaxes/blits.json"
+      },
+      {
+        "scopeName": "markdown.blits.codeblock",
+        "path": "./syntaxes/blits-markdown.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.blits": "blits"
+        }
       }
     ],
     "keybindings": [
