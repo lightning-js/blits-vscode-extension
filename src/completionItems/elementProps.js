@@ -33,19 +33,17 @@ const parseProps = async () => {
   )
   let code = ''
   try {
-    const realPath = await fs.realpath(blitsElementJsPath)
-
-    const fileExists = await fs.pathExists(realPath)
+    const fileExists = await fs.pathExists(blitsElementJsPath)
     if (!fileExists) {
       console.error(
         `Blits - element.js not found at ${blitsElementJsPath}. Please make sure you have the @lightningjs/blits package installed.`
       )
-      return
+      return false
     }
-    code = await fs.readFile(realPath, 'utf8')
+    code = await fs.readFile(blitsElementJsPath, 'utf8')
   } catch (error) {
     console.error(`Error resolving real path for ${blitsElementJsPath}:`, error)
-    return
+    return false
   }
 
   // Parse the code to an AST
@@ -82,6 +80,8 @@ const parseProps = async () => {
   }
 
   console.log(`Got following prop names from Blits : ${elementProps}`)
+
+  return true
 }
 
 const suggest = async (attributes) => {

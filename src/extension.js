@@ -20,27 +20,29 @@ const commands = require('./commands')
 const formatters = require('./formatters')
 const completionItems = require('./completionItems')
 
-function activate(context) {
-  // get element/renderer props from Blits codebase
-  console.log('Parsing element props from Blits codebase')
-  completionItems.elementProps.parseProps().then(() => {
-    // add completion provider for template section
-    context.subscriptions.push(completionProviders.templateAttributes)
-  })
+async function activate(context) {
+  console.log('Lightning Blits is being activated.')
 
-  // comment command wrapper for template section
-  context.subscriptions.push(commands.commentCommand)
+  try {
+    // get element/renderer props from Blits codebase
+    console.log('Parsing element props from Blits codebase')
+    const isElementPropsReady = await completionItems.elementProps.parseProps()
 
-  // format template section on save
-  context.subscriptions.push(formatters.templateFormatterOnSave)
+    if (!isElementPropsReady) {
+      // add completion provider for template section
+      context.subscriptions.push(completionProviders.templateAttributes)
+    }
 
-  // .blits file type
-  // const blitsDocumentSelector = [
-  //   { language: 'blits', scheme: 'file' },
-  //   { language: 'blits', scheme: 'untitled' },
-  // ]
+    // comment command wrapper for template section
+    context.subscriptions.push(commands.commentCommand)
 
-  console.log('Lightning Blits has been activated.')
+    // format template section on save
+    context.subscriptions.push(formatters.templateFormatterOnSave)
+
+    console.log('Lightning Blits has been activated.')
+  } catch (error) {
+    console.error('Error activating Lightning Blits:', error)
+  }
 }
 
 function deactivate() {
