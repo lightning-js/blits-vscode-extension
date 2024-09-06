@@ -3,7 +3,7 @@
   "publisher": "lightningjs",
   "displayName": "Lightning Blits",
   "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightning-js/blits-vscode-extension.git"
@@ -23,6 +23,8 @@
     "Blits",
     "Blitz"
   ],
+  "author": "Ugur Aslan <ugur@uguraslan.net>",
+  "license": "Apache-2",
   "icon": "./icon.png",
   "activationEvents": [
     "onLanguage:javascript",
