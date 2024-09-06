@@ -19,6 +19,8 @@ const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
 const completionItems = require('./completionItems')
+const errorChecking = require('./errorChecking')
+const vscode = require('vscode')
 
 async function activate(context) {
   console.log('Lightning Blits is being activated.')
@@ -38,6 +40,11 @@ async function activate(context) {
 
     // format template section on save
     context.subscriptions.push(formatters.templateFormatterOnSave)
+
+    // create diagnostic collection for error checking
+    const diagnosticsCollection =
+      vscode.languages.createDiagnosticCollection('blits')
+    errorChecking.checkForLoopIndexAsKey(context, diagnosticsCollection)
 
     console.log('Lightning Blits has been activated.')
   } catch (error) {
