@@ -19,10 +19,13 @@ const fileManager = require('./fileManager')
 const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
+const completionItems = require('./completionItems')
+const errorChecking = require('./errorChecking')
+const vscode = require('vscode')
 
-function activate(context) {
+async function activate(context) {
   // initiate file manager
-  fileManager.init(context)
+  // fileManager.init(context)
 
   // let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
   //   event.contentChanges.forEach((change) => {
@@ -37,20 +40,37 @@ function activate(context) {
 
   // context.subscriptions.push(disposable)
 
-  // add completion provider for template section
-  context.subscriptions.push(completionProviders.templateAttributes)
+  console.log('Lightning Blits is being activated.')
 
-  // comment command wrapper for template section
-  context.subscriptions.push(commands.commentCommand)
+  try {
+    // get element/renderer props from Blits codebase
+    console.log('Parsing element props from Blits codebase')
+    const isElementPropsReady = await completionItems.elementProps.parseProps()
 
-  // format template section on save
-  context.subscriptions.push(formatters.templateFormatterOnSave)
+    if (!isElementPropsReady) {
+      // add completion provider for template section
+      context.subscriptions.push(completionProviders.templateAttributes)
+    }
 
-  console.log('Lightning Blits has been activated.')
+    // comment command wrapper for template section
+    context.subscriptions.push(commands.commentCommand)
+
+    // format template section on save
+    context.subscriptions.push(formatters.templateFormatterOnSave)
+
+    // create diagnostic collection for error checking
+    const diagnosticsCollection =
+      vscode.languages.createDiagnosticCollection('blits')
+    errorChecking.checkForLoopIndexAsKey(context, diagnosticsCollection)
+
+    console.log('Lightning Blits has been activated.')
+  } catch (error) {
+    console.error('Error activating Lightning Blits:', error)
+  }
 }
 
 function deactivate() {
-  fileManager.clearAllFiles()
+  // fileManager.clearAllFiles()
   console.log('Lightning Blits has been deactivated.')
 }
 

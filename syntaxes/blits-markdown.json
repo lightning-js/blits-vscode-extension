@@ -1,0 +1,32 @@
+{
+  "scopeName": "markdown.blits.codeblock",
+  "injectionSelector": "L:markup.fenced_code.block.markdown",
+  "patterns": [
+    {
+      "include": "#blits-code-block"
+    }
+  ],
+  "repository": {
+    "blits-code-block": {
+      "begin": "(?<=^```)(blits)\\s*$",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.type.blits"
+        }
+      },
+      "end": "(^|\\G)(?=```\\s*$)",
+      "patterns": [
+        {
+          "begin": "(^|\\G)(?!```)",
+          "end": "(?=^```\\s*$)",
+          "name": "meta.embedded.block.blits",
+          "patterns": [
+            {
+              "include": "source.blits"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

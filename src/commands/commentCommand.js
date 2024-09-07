@@ -18,6 +18,7 @@
 const vscode = require('vscode')
 const templateHelper = require('../helpers/template')
 const parse = require('../parsers')
+const { is } = require('@babel/traverse/lib/path/introspection')
 
 module.exports = vscode.commands.registerCommand(
   'blits-vscode.commentCommand',
@@ -27,18 +28,28 @@ module.exports = vscode.commands.registerCommand(
     if (editor) {
       const document = editor.document
       const selection = editor.selection
+      const isBlits = document.languageId === 'blits'
 
       const currentDoc = document.getText()
-      const currentDocAst = parse.AST(currentDoc)
       const cursorPosition = selection.active
 
-      if (
-        templateHelper.isCursorInsideTemplate(
+      let isCursorInsideTemplate = false
+      if (isBlits) {
+        isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(
+          document,
+          currentDoc,
+          cursorPosition
+        )
+      } else {
+        const currentDocAst = parse.AST(currentDoc)
+        isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(
           document,
           currentDocAst,
           cursorPosition
         )
-      ) {
+      }
+
+      if (isCursorInsideTemplate) {
         await editor.edit((editBuilder) => {
           let startLine, endLine
 
