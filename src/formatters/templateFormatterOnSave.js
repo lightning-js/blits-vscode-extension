@@ -14,12 +14,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 const vscode = require('vscode')
 const parse = require('../parsers')
 const templateHelper = require('../helpers/template')
 const prettier = require('prettier')
-const configKeys = [
+
+const CONFIG_KEYS = [
   'printWidth',
   'tabWidth',
   'useTabs',
@@ -33,73 +33,88 @@ const configKeys = [
   'singleAttributePerLine',
 ]
 
+function getAutoFormatConfig() {
+  const config = vscode.workspace.getConfiguration('blits.format')
+  return CONFIG_KEYS.reduce((settings, key) => {
+    if (Object.prototype.hasOwnProperty.call(config, key)) {
+      settings[key] = config.get(key)
+    }
+    return settings
+  }, {})
+}
+
+function formatTemplate(template, parser, extraIndentation = '') {
+  const config = getAutoFormatConfig()
+  let formattedTemplate = prettier.format(template, { parser, ...config })
+
+  if (extraIndentation) {
+    formattedTemplate =
+      extraIndentation +
+      formattedTemplate
+        .replace(/\n/g, `\n${extraIndentation}`)
+        .replace(/[\t ]+$/, '  ')
+  }
+
+  return formattedTemplate
+}
+
+function createEdit(document, start, end, newText) {
+  const startPosition = document.positionAt(start)
+  const endPosition = document.positionAt(end)
+  return new vscode.TextEdit(
+    new vscode.Range(startPosition, endPosition),
+    newText
+  )
+}
+
+function formatJS(document, currentDoc, fileExtension) {
+  const currentDocAst = parse.AST(currentDoc, fileExtension)
+  const templates = templateHelper.getTemplateText(currentDocAst, currentDoc)
+
+  return templates.map(({ start, end, template }) => {
+    const stringChar = template.slice(-1)
+    const templateText = template.slice(1, -1)
+    const formattedTemplate = formatTemplate(
+      templateText,
+      'angular',
+      ' '.repeat(4)
+    )
+    const newText = `${stringChar}\n${formattedTemplate}${stringChar}`
+    return createEdit(document, start, end, newText)
+  })
+}
+
+function formatBlits(document, currentDoc) {
+  const blitsFileObject = templateHelper.getBlitsFileWithoutLicense(currentDoc)
+
+  if (blitsFileObject) {
+    const { start, end, content } = blitsFileObject
+    try {
+      const formattedTemplate = formatTemplate(content, 'vue')
+      return [createEdit(document, start, end, formattedTemplate)]
+    } catch (err) {
+      console.log('Blits: error formatting', err)
+    }
+  }
+
+  return []
+}
+
 module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
-  // check if auto format is enabled
   const autoFormatEnabled = vscode.workspace
     .getConfiguration('blits')
     .get('autoFormat')
 
-  if (!autoFormatEnabled) {
-    return
-  }
+  if (!autoFormatEnabled) return
 
   const document = event.document
   const currentDoc = document.getText()
   const fileExtension = document.uri.fsPath.split('.').pop()
-  const currentDocAst = parse.AST(currentDoc, fileExtension)
-  const templates = templateHelper.getTemplateText(currentDocAst, currentDoc)
 
-  let edits = []
-
-  if (templates.length > 0) {
-    templates.forEach((templateObject) => {
-      const { start, end, template } = templateObject
-      const stringChar = template.slice(-1)
-
-      // remove first and last character (`, ', ", ``, '', "")
-      const templateText = template.slice(1, -1)
-      const config = getAutoFormatConfig()
-      let formattedTemplate = prettier.format(templateText, {
-        parser: 'angular',
-        ...config,
-      })
-
-      console.log('formattedTemplate', formattedTemplate)
-
-      // add extra indentation for all lines (4 spaces)
-      const extraIndentation = ' '.repeat(4)
-      formattedTemplate =
-        extraIndentation +
-        formattedTemplate
-          .replace(/\n/g, `\n${extraIndentation}`)
-          .replace(/[\t ]+$/, '  ') // indent 2 spaces if the last line only contains a newline/space/tab
-
-      // add template key and possible comment back
-      formattedTemplate = `${stringChar}\n${formattedTemplate}${stringChar}`
-
-      const startPosition = document.positionAt(start)
-      const endPosition = document.positionAt(end)
-
-      const edit = new vscode.TextEdit(
-        new vscode.Range(startPosition, endPosition),
-        formattedTemplate
-      )
-      edits.push(edit)
-    })
-  }
+  const formatFunction = fileExtension === 'blits' ? formatBlits : formatJS
+  const edits = formatFunction(document, currentDoc, fileExtension)
 
   if (edits.length > 0) {
     event.waitUntil(Promise.resolve(edits))
   }
 })
-
-function getAutoFormatConfig() {
-  const config = vscode.workspace.getConfiguration('blits.format')
-  let allSettings = {}
-  configKeys.forEach((key) => {
-    if (Object.prototype.hasOwnProperty.call(config, key)) {
-      allSettings[key] = config.get(key)
-    }
-  })
-  return allSettings
-}
