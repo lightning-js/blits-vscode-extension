@@ -224,7 +224,7 @@
           "name": "punctuation.definition.tag.end.html"
         }
       },
-      "contentName": "source.ts",
+      "contentName": "meta.embedded.block.typescript",
       "patterns": [
         {
           "include": "source.ts"
@@ -256,7 +256,7 @@
           "name": "punctuation.definition.tag.end.html"
         }
       },
-      "contentName": "source.js",
+      "contentName": "meta.embedded.block.javascript",
       "patterns": [
         {
           "include": "source.js"

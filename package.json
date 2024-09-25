@@ -43,16 +43,23 @@
     "publish": "vsce publish"
   },
   "contributes": {
-    "languages": [{
-      "id": "blits",
-      "extensions": [".blits"],
-      "aliases": ["Blits", "blits"],
-      "configuration": "./languages/blits.json",
-      "icon": {
+    "languages": [
+      {
+        "id": "blits",
+        "extensions": [
+          ".blits"
+        ],
+        "aliases": [
+          "Blits",
+          "blits"
+        ],
+        "configuration": "./languages/blits-language-configuration.json",
+        "icon": {
           "light": "./languages/icons/blits-icon.svg",
           "dark": "./languages/icons/blits-icon.svg"
         }
-    }],
+      }
+    ],
     "grammars": [
       {
         "injectTo": [
@@ -65,7 +72,13 @@
       {
         "language": "blits",
         "scopeName": "source.blits",
-        "path": "./syntaxes/blits.json"
+        "path": "./syntaxes/blits.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.javascript": "javascript",
+          "meta.embedded.block.typescript": "typescript",
+          "source.ts": "typescript",
+          "source.js": "javascript"
+        }
       },
       {
         "scopeName": "markdown.blits.codeblock",
@@ -78,6 +91,9 @@
         }
       }
     ],
+    "capabilities": {
+      "hoverProvider": "true"
+    },
     "keybindings": [
       {
         "key": "ctrl+/",
@@ -188,20 +204,20 @@
     "@babel/parser": "^7.22.11",
     "@babel/traverse": "^7.23.2",
     "fs-extra": "^11.1.1",
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "typescript": "^5.6.2"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
-    "@types/node": "16.x",
+    "@types/node": "^16.18.108",
     "@types/vscode": "^1.81.0",
     "@vscode/test-electron": "^2.3.4",
-    "@vscode/vsce": "^2.26.0",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.19.2",
-    "eslint": "^8.47.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "glob": "^10.3.3",
-    "mocha": "^10.2.0",
-    "typescript": "^5.1.6"
+    "mocha": "^10.7.3"
   }
 }

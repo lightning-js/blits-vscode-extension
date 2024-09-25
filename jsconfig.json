@@ -1,8 +1,11 @@
 {
 	"compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
 		"module": "commonjs",
 		"target": "ES2020",
-		"checkJs": false,  /* Typecheck .js files. */
+		"checkJs": true,
 		"lib": [
 			"ES2020"
 		]
