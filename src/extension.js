@@ -15,34 +15,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const fileManager = require('./fileManager')
+// const fileManager = require('./fileManager')
 const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
 const completionItems = require('./completionItems')
 const errorChecking = require('./errorChecking')
 const vscode = require('vscode')
+const { registerDiagnostics } = require('./blitsFile/diagnostics')
+const { registerHoverProvider } = require('./blitsFile/hoverProvider')
+const { registerCompletionProvider } = require('./blitsFile/completionProvider')
+const { registerSignatureHelpProvider } = require('./blitsFile/signatureHelpProvider')
+// const { registerCodeActionsProvider } = require('./blitsFile/codeActionsProvider') // not working yet
+const { getLanguageServiceInstance } = require('./blitsFile/languageService')
+const packageJSON = require('../package.json')
 
 async function activate(context) {
-  // initiate file manager
-  // fileManager.init(context)
-
-  // let disposable = vscode.workspace.onDidChangeTextDocument((event) => {
-  //   event.contentChanges.forEach((change) => {
-  //     console.log(
-  //       `Change at range: ${change.range.start.line}:${change.range.start.character} - ${change.range.end.line}:${change.range.end.character}`
-  //     )
-  //     console.log(
-  //       `Replaced ${change.rangeLength} characters with '${change.text}'`
-  //     )
-  //   })
-  // })
-
-  // context.subscriptions.push(disposable)
-
   console.log('Lightning Blits is being activated.')
 
   try {
+    // Blits file type features
+    const languageService = getLanguageServiceInstance()
+    if (!languageService) {
+      throw new Error('Failed to initialize TypeScript language service')
+    }
+
+    registerDiagnostics(context)
+    registerHoverProvider(context)
+    registerCompletionProvider(context)
+    registerSignatureHelpProvider(context)
+    // registerCodeActionsProvider(context)
+
+    // Other features
+
     // get element/renderer props from Blits codebase
     console.log('Parsing element props from Blits codebase')
     const isElementPropsReady = await completionItems.elementProps.parseProps()
@@ -59,19 +64,24 @@ async function activate(context) {
     context.subscriptions.push(formatters.templateFormatterOnSave)
 
     // create diagnostic collection for error checking
-    const diagnosticsCollection =
-      vscode.languages.createDiagnosticCollection('blits')
+    const diagnosticsCollection = vscode.languages.createDiagnosticCollection('blits-template')
     errorChecking.checkForLoopIndexAsKey(context, diagnosticsCollection)
 
+    // extension activated
+    vscode.window.showInformationMessage(`Lightning Blits v${packageJSON.version} has been activated!`)
     console.log('Lightning Blits has been activated.')
   } catch (error) {
     console.error('Error activating Lightning Blits:', error)
+    vscode.window.showErrorMessage(`Failed to activate Lightning Blits v${packageJSON.version}: ${error.message}`)
   }
 }
 
 function deactivate() {
-  // fileManager.clearAllFiles()
-  console.log('Lightning Blits has been deactivated.')
+  console.log('Lightning Blits is being deactivated.')
+  const languageServiceInstance = getLanguageServiceInstance()
+  if (languageServiceInstance && typeof languageServiceInstance.disposeLanguageServices === 'function') {
+    languageServiceInstance.disposeLanguageServices()
+  }
 }
 
 module.exports = {
