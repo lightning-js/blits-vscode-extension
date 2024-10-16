@@ -16,20 +16,18 @@
  */
 
 const ts = require('typescript')
+const vscode = require('vscode')
 const fs = require('fs')
 const path = require('path')
-const vscode = require('vscode')
 const { getAllVirtualFiles, addVirtualFile, getVirtualFile } = require('./virtualDocuments')
-const { jsCompilerOptions, tsCompilerOptions } = require('./config/compilerOptions')
+const compilerOptions = require('./config/compilerOptions')
 const { extractScriptContent } = require('./utils/scriptExtractor')
 const { getVirtualFileName } = require('./utils/fileNameGenerator')
 
-// Language Service Instances (Initially null for lazy-loading)
 let jsLanguageService = null
 let tsLanguageService = null
 
-// Language Service Hosts (Factory Function)
-function createLanguageServiceHost(compilerOptions) {
+function createLanguageServiceHost(options) {
   return {
     getScriptFileNames: () => {
       const scriptFiles = vscode.workspace.textDocuments
@@ -50,7 +48,7 @@ function createLanguageServiceHost(compilerOptions) {
       let content
 
       if (path.extname(fileName) === '.blits') {
-        const { virtualFile, lang } = getOrCreateVirtualDocument(fileName) || {}
+        const { virtualFile } = getOrCreateVirtualDocument(fileName) || {}
         if (virtualFile) {
           content = virtualFile.content
         }
@@ -65,11 +63,8 @@ function createLanguageServiceHost(compilerOptions) {
 
       return content ? ts.ScriptSnapshot.fromString(content) : undefined
     },
-    getCurrentDirectory: () => {
-      const workspaceFolders = vscode.workspace.workspaceFolders
-      return workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : process.cwd()
-    },
-    getCompilationSettings: () => compilerOptions,
+    getCurrentDirectory: () => vscode.workspace.workspaceFolders[0].uri.fsPath,
+    getCompilationSettings: () => options,
     getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
     fileExists: ts.sys.fileExists,
     readFile: ts.sys.readFile,
@@ -77,8 +72,10 @@ function createLanguageServiceHost(compilerOptions) {
     directoryExists: ts.sys.directoryExists,
     getDirectories: ts.sys.getDirectories,
     resolveModuleNames: (moduleNames, containingFile) => {
-      const containingLang = path.extname(containingFile) === '.ts' ? 'ts' : 'js'
-      const currentCompilerOptions = containingLang === 'ts' ? tsCompilerOptions : jsCompilerOptions
+      const currentCompilerOptions =
+        path.extname(containingFile) === '.ts'
+          ? compilerOptions.getTsCompilerOptions()
+          : compilerOptions.getJsCompilerOptions()
 
       return moduleNames.map((moduleName) => {
         const result = ts.resolveModuleName(moduleName, containingFile, currentCompilerOptions, {
@@ -121,7 +118,7 @@ function createLanguageServiceHost(compilerOptions) {
 
 function initializeJsLanguageService() {
   if (!jsLanguageService) {
-    const jsLanguageServiceHost = createLanguageServiceHost(jsCompilerOptions)
+    const jsLanguageServiceHost = createLanguageServiceHost(compilerOptions.getJsCompilerOptions())
     jsLanguageService = ts.createLanguageService(jsLanguageServiceHost, ts.createDocumentRegistry())
     console.log('JavaScript Language Service initialized.')
   }
@@ -130,7 +127,7 @@ function initializeJsLanguageService() {
 
 function initializeTsLanguageService() {
   if (!tsLanguageService) {
-    const tsLanguageServiceHost = createLanguageServiceHost(tsCompilerOptions)
+    const tsLanguageServiceHost = createLanguageServiceHost(compilerOptions.getTsCompilerOptions())
     tsLanguageService = ts.createLanguageService(tsLanguageServiceHost, ts.createDocumentRegistry())
     console.log('TypeScript Language Service initialized.')
   }
@@ -144,12 +141,11 @@ function getLanguageService(fileName) {
   } else if (ext === '.js' || ext === '.jsx') {
     return initializeJsLanguageService()
   }
-  // For .blits files, determine language from 'lang' attribute
   if (ext === '.blits') {
     const { lang } = getOrCreateVirtualDocument(fileName) || {}
     return lang === 'ts' ? initializeTsLanguageService() : initializeJsLanguageService()
   }
-  return null // No Language Service for unsupported file types
+  return null
 }
 
 function getOrCreateVirtualDocument(fileName) {
@@ -171,6 +167,18 @@ function getOrCreateVirtualDocument(fileName) {
   return { virtualFile, lang }
 }
 
+compilerOptions.onDidChangeCompilerOptions(() => {
+  if (jsLanguageService) {
+    jsLanguageService.dispose()
+    jsLanguageService = null
+  }
+  if (tsLanguageService) {
+    tsLanguageService.dispose()
+    tsLanguageService = null
+  }
+  // They will be re-initialized on next use with new compiler options
+})
+
 function disposeLanguageServices() {
   if (jsLanguageService) {
     jsLanguageService.dispose()
@@ -182,9 +190,9 @@ function disposeLanguageServices() {
     tsLanguageService = null
     console.log('TypeScript Language Service disposed.')
   }
+  compilerOptions.dispose()
 }
 
-// Exported function to get Language Services and manage lifecycle
 function getLanguageServiceInstance() {
   return {
     getLanguageService,

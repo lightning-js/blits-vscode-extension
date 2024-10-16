@@ -40,6 +40,15 @@ async function activate(context) {
       throw new Error('Failed to initialize TypeScript language service')
     }
 
+    // Register languageServiceInstance disposal
+    context.subscriptions.push({
+      dispose: () => {
+        if (languageService && typeof languageService.disposeLanguageServices === 'function') {
+          languageService.disposeLanguageServices()
+        }
+      },
+    })
+
     registerDiagnostics(context)
     registerHoverProvider(context)
     registerCompletionProvider(context)
@@ -78,10 +87,6 @@ async function activate(context) {
 
 function deactivate() {
   console.log('Lightning Blits is being deactivated.')
-  const languageServiceInstance = getLanguageServiceInstance()
-  if (languageServiceInstance && typeof languageServiceInstance.disposeLanguageServices === 'function') {
-    languageServiceInstance.disposeLanguageServices()
-  }
 }
 
 module.exports = {
