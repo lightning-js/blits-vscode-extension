@@ -1,0 +1,83 @@
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["<", ">"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "`", "close": "`", "notIn": ["string", "comment"] },
+    { "open": "/**", "close": " */", "notIn": ["string"] },
+    { "open": "<", "close": ">", "notIn": ["string", "comment"] },
+    { "open": "<!--", "close": " -->", "notIn": ["string"] }
+  ],
+  "autoCloseBefore": ";:.,=}])>` \n\t",
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["'", "'"],
+    ["\"", "\""],
+    ["`", "`"],
+    ["<", ">"]
+  ],
+  "folding": {
+    "markers": {
+      "start": "^<(template|script)\\b.*>",
+      "end": "^</(template|script)>"
+    }
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^`~!@#%^&*()\\-+=\\[\\]{\\}\\\\|;:'\",.<>/?\\s]+)",
+  "indentationRules": {
+    "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"'`]*|\\([^)\"'`]*|\\[[^\\]\"'`]*|<[^/>]*>)$",
+    "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\)\\}\\]].*$|^\\s*<\\/[^>]+>"
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*<script[^>]*>$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*<template[^>]*>$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*</script>$",
+      "action": { "indent": "outdent" }
+    },
+    {
+      "beforeText": "^\\s*</template>$",
+      "action": { "indent": "outdent" }
+    },
+    {
+      "beforeText": "^\\s*/\\*.*$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*\\*/$",
+      "action": { "indent": "outdent" }
+    },
+    {
+      "beforeText": "^\\s*<([^/][^>]*[^/>])>\\s*$",
+      "afterText": "^\\s*</([^>]+)>\\s*$",
+      "action": { "indent": "indentOutdent" }
+    },
+    {
+      "beforeText": "^\\s*<([^/][^>]*[^/>])>\\s*$",
+      "action": { "indent": "none" }
+    },
+    {
+      "beforeText": "^\\s*<!--$",
+      "action": { "indent": "none" }
+    }
+  ]
+}

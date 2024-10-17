@@ -15,25 +15,78 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// const fileManager = require('./fileManager')
 const completionProviders = require('./completionProviders')
 const commands = require('./commands')
 const formatters = require('./formatters')
+const completionItems = require('./completionItems')
+const errorChecking = require('./errorChecking')
+const vscode = require('vscode')
+const { registerDiagnostics } = require('./blitsFile/diagnostics')
+const { registerHoverProvider } = require('./blitsFile/hoverProvider')
+const { registerCompletionProvider } = require('./blitsFile/completionProvider')
+const { registerSignatureHelpProvider } = require('./blitsFile/signatureHelpProvider')
+// const { registerCodeActionsProvider } = require('./blitsFile/codeActionsProvider') // not working yet
+const { getLanguageServiceInstance } = require('./blitsFile/languageService')
+const packageJSON = require('../package.json')
 
-function activate(context) {
-  // add completion provider for template section
-  context.subscriptions.push(completionProviders.templateAttributes)
+async function activate(context) {
+  console.log('Lightning Blits is being activated.')
 
-  // comment command wrapper for template section
-  context.subscriptions.push(commands.commentCommand)
+  try {
+    // Blits file type features
+    const languageService = getLanguageServiceInstance()
+    if (!languageService) {
+      throw new Error('Failed to initialize TypeScript language service')
+    }
 
-  // format template section on save
-  context.subscriptions.push(formatters.templateFormatterOnSave)
+    // Register languageServiceInstance disposal
+    context.subscriptions.push({
+      dispose: () => {
+        if (languageService && typeof languageService.disposeLanguageServices === 'function') {
+          languageService.disposeLanguageServices()
+        }
+      },
+    })
 
-  console.log('Lightning Blits has been activated.')
+    registerDiagnostics(context)
+    registerHoverProvider(context)
+    registerCompletionProvider(context)
+    registerSignatureHelpProvider(context)
+    // registerCodeActionsProvider(context)
+
+    // Other features
+
+    // get element/renderer props from Blits codebase
+    console.log('Parsing element props from Blits codebase')
+    const isElementPropsReady = await completionItems.elementProps.parseProps()
+
+    if (!isElementPropsReady) {
+      // add completion provider for template section
+      context.subscriptions.push(completionProviders.templateAttributes)
+    }
+
+    // comment command wrapper for template section
+    context.subscriptions.push(commands.commentCommand)
+
+    // format template section on save
+    context.subscriptions.push(formatters.templateFormatterOnSave)
+
+    // create diagnostic collection for error checking
+    const diagnosticsCollection = vscode.languages.createDiagnosticCollection('blits-template')
+    errorChecking.checkForLoopIndexAsKey(context, diagnosticsCollection)
+
+    // extension activated
+    vscode.window.showInformationMessage(`Lightning Blits v${packageJSON.version} has been activated!`)
+    console.log('Lightning Blits has been activated.')
+  } catch (error) {
+    console.error('Error activating Lightning Blits:', error)
+    vscode.window.showErrorMessage(`Failed to activate Lightning Blits v${packageJSON.version}: ${error.message}`)
+  }
 }
 
 function deactivate() {
-  console.log('Lightning Blits has been deactivated.')
+  console.log('Lightning Blits is being deactivated.')
 }
 
 module.exports = {

@@ -20,46 +20,65 @@ const templateHelper = require('../helpers/template')
 const completionItems = require('../completionItems')
 const parse = require('../parsers')
 
+const getCompletionItems = async (document, currentDoc, position, isBlits) => {
+  let isCursorInsideTemplate = false
+  if (isBlits) {
+    isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(
+      document,
+      currentDoc,
+      position
+    )
+  } else {
+    const ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
+    isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(
+      document,
+      ast,
+      position
+    )
+  }
+
+  if (isCursorInsideTemplate) {
+    const currentLine = document.lineAt(position).text
+    const { tagName, attributes } =
+      templateHelper.getExistingTagAndAttributes(currentLine)
+
+    if (tagName) {
+      if (tagName === 'Element') {
+        return await completionItems.elementProps.suggest(attributes)
+      } else {
+        let ast
+        if (isBlits) {
+          const { content, language } =
+            templateHelper.getScriptContentForBlits(currentDoc)
+          ast = parse.AST(content, language)
+        } else {
+          ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
+        }
+
+        return await completionItems.componentProps.suggest(
+          tagName,
+          attributes,
+          document,
+          ast
+        )
+      }
+    }
+  }
+
+  return []
+}
+
 module.exports = vscode.languages.registerCompletionItemProvider(
-  [{ language: 'javascript' }, { language: 'typescript' }],
+  [
+    { language: 'javascript' },
+    { language: 'typescript' },
+    { language: 'blits' },
+  ],
   {
-    // eslint-disable-next-line no-unused-vars
     async provideCompletionItems(document, position, token, context) {
       const currentDoc = document.getText()
-      const fileExtension = document.uri.fsPath.split('.').pop()
-      const currentDocAst = parse.AST(currentDoc, fileExtension)
-
-      if (
-        templateHelper.isCursorInsideTemplate(document, currentDocAst, position)
-      ) {
-        const currentLine = document.lineAt(position).text
-        const { tagName, attributes } =
-          templateHelper.getExistingTagAndAttributes(currentLine)
-
-        console.log(`Current tag: ${tagName}`)
-
-        // fixme: in some cases the content of a tag can be multiline
-        if (tagName) {
-          // hardcoded for now, Blits will provide a map for rendererer props
-          if (tagName === 'Element') {
-            return await completionItems.elementProps(
-              tagName,
-              attributes,
-              document,
-              currentDocAst
-            )
-          } else {
-            // get props for custom component
-            return await completionItems.componentProps(
-              tagName,
-              attributes,
-              document,
-              currentDocAst
-            )
-          }
-        }
-      }
-      return []
+      const isBlits = document.languageId === 'blits'
+      return await getCompletionItems(document, currentDoc, position, isBlits)
     },
   },
   ':'

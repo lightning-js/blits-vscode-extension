@@ -2,3 +2,6 @@ node_modules
 /*.vsix
 out
 .DS_Store
+backup
+*.vsix
+*.zip

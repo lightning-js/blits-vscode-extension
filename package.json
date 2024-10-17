@@ -3,7 +3,7 @@
   "publisher": "lightningjs",
   "displayName": "Lightning Blits",
   "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightning-js/blits-vscode-extension.git"
@@ -23,6 +23,8 @@
     "Blits",
     "Blitz"
   ],
+  "author": "Ugur Aslan <ugur@uguraslan.net>",
+  "license": "Apache-2",
   "icon": "./icon.png",
   "activationEvents": [
     "onLanguage:javascript",
@@ -36,9 +38,28 @@
     "vscode:prepublish": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "contributes": {
+    "languages": [
+      {
+        "id": "blits",
+        "extensions": [
+          ".blits"
+        ],
+        "aliases": [
+          "Blits",
+          "blits"
+        ],
+        "configuration": "./languages/blits-language-configuration.json",
+        "icon": {
+          "light": "./languages/icons/blits-icon.svg",
+          "dark": "./languages/icons/blits-icon.svg"
+        }
+      }
+    ],
     "grammars": [
       {
         "injectTo": [
@@ -47,14 +68,38 @@
         ],
         "scopeName": "inline.custom-blits-html",
         "path": "./syntaxes/embedded-html.json"
+      },
+      {
+        "language": "blits",
+        "scopeName": "source.blits",
+        "path": "./syntaxes/blits.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.javascript": "javascript",
+          "meta.embedded.block.typescript": "typescript",
+          "source.ts": "typescript",
+          "source.js": "javascript"
+        }
+      },
+      {
+        "scopeName": "markdown.blits.codeblock",
+        "path": "./syntaxes/blits-markdown.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.blits": "blits"
+        }
       }
     ],
+    "capabilities": {
+      "hoverProvider": "true"
+    },
     "keybindings": [
       {
         "key": "ctrl+/",
         "mac": "cmd+/",
         "command": "blits-vscode.commentCommand",
-        "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript')"
+        "when": "editorTextFocus && (editorLangId == 'javascript' || editorLangId == 'typescript' || editorLangId == 'blits')"
       }
     ],
     "configuration": {
@@ -159,19 +204,20 @@
     "@babel/parser": "^7.22.11",
     "@babel/traverse": "^7.23.2",
     "fs-extra": "^11.1.1",
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "typescript": "^5.6.2"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.1",
-    "@types/node": "16.x",
+    "@types/node": "^16.18.108",
     "@types/vscode": "^1.81.0",
     "@vscode/test-electron": "^2.3.4",
+    "@vscode/vsce": "^2.32.0",
     "esbuild": "^0.19.2",
-    "eslint": "^8.47.0",
+    "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "glob": "^10.3.3",
-    "mocha": "^10.2.0",
-    "typescript": "^5.1.6"
+    "mocha": "^10.7.3"
   }
 }

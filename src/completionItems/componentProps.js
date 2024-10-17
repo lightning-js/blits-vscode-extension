@@ -22,68 +22,77 @@ const parse = require('../parsers')
 const templateHelper = require('../helpers/template')
 const elementProps = require('./elementProps')
 
-module.exports = async (tag, attributes, doc, docAst) => {
+const createCompletionItems = (props, attributes) => {
+  return props.flatMap((prop) => {
+    if (attributes.includes(prop.key)) return []
+
+    const createItem = (prefix = '') => {
+      const item = new vscode.CompletionItem(
+        `${prefix}${prop.key}`,
+        vscode.CompletionItemKind.Property
+      )
+      item.insertText = new vscode.SnippetString(
+        `${prop.key}="${prop.default || ''}$0"`
+      )
+      item.sortText = `0${prefix}${prop.key}`
+      return item
+    }
+
+    return [createItem(), createItem(':')]
+  })
+}
+
+const parseComponent = (attributes, componentFileContent, fileExtension) => {
+  let ast, props
+
+  if (fileExtension === 'blits') {
+    const { content, language } =
+      templateHelper.getScriptContentForBlits(componentFileContent)
+    ast = parse.AST(content, language)
+  } else {
+    ast = parse.AST(componentFileContent)
+  }
+
+  props = parse.componentProps(ast)
+  const completionItems = createCompletionItems(props, attributes)
+
+  return completionItems
+}
+
+const suggest = async (tag, attributes, doc, docAst) => {
   let completionItems = []
 
-  // Get the path of the current file
   const currentFilePath = doc.uri.fsPath
   const dir = path.dirname(currentFilePath)
 
-  // get the import file for the tag
   const componentFile = templateHelper.findComponentFileByName(docAst, tag)
-  console.log(`Component file: ${componentFile}`)
 
   if (componentFile && componentFile.length > 0) {
     try {
-      // Component file
       const componentFilePath = path.join(dir, componentFile)
+      const fileExtension = componentFile.split('.').pop()
       const componentFileContent = await fs.readFile(componentFilePath, 'utf-8')
 
-      console.log(`Component file path: ${componentFilePath}`)
-
       if (componentFileContent) {
-        const ast = parse.AST(componentFileContent)
-        const props = parse.componentProps(ast)
-
-        console.log(`Props: ${JSON.stringify(props)}`)
-
-        props.forEach((prop) => {
-          if (!attributes.includes(prop.key)) {
-            const completionItem = new vscode.CompletionItem(
-              prop.key,
-              vscode.CompletionItemKind.Property
-            )
-            completionItem.insertText = new vscode.SnippetString(
-              `${prop.key}="${prop.default ? prop.default : ''}$0"`
-            )
-            completionItem.sortText = '0' + prop.key
-            completionItems.push(completionItem)
-          }
-
-          // add also version of completion items that start with ':'
-          // fixme: is there any way to understand if a property is reactive or not?
-          if (!attributes.includes(prop.key)) {
-            const reactiveCompletionItem = new vscode.CompletionItem(
-              `:${prop.key}`,
-              vscode.CompletionItemKind.Property
-            )
-            reactiveCompletionItem.insertText = new vscode.SnippetString(
-              `${prop.key}="${prop.default ? prop.default : ''}$0"`
-            )
-            reactiveCompletionItem.sortText = '0' + `:${prop.key}`
-            completionItems.push(reactiveCompletionItem)
-          }
-        })
+        completionItems = parseComponent(
+          attributes,
+          componentFileContent,
+          fileExtension
+        )
       }
     } catch (err) {
-      console.log(err)
+      console.error('Error parsing component:', err)
       return []
     }
   }
 
   // always merge with core props
-  const elementCompletionItems = await elementProps(attributes)
+  const elementCompletionItems = await elementProps.suggest(attributes)
   completionItems = completionItems.concat(elementCompletionItems)
 
   return completionItems
+}
+
+module.exports = {
+  suggest,
 }
