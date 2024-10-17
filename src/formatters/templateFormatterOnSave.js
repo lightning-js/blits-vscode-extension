@@ -45,26 +45,47 @@ function getAutoFormatConfig() {
 
 function formatTemplate(template, parser, extraIndentation = '') {
   const config = getAutoFormatConfig()
+  template = template.replace(/^\s*/gm, '')
+
+  // process multiline comments
+  template = modifyComments(template)
   let formattedTemplate = prettier.format(template, { parser, ...config })
 
   if (extraIndentation) {
-    formattedTemplate =
-      extraIndentation +
-      formattedTemplate
-        .replace(/\n/g, `\n${extraIndentation}`)
-        .replace(/[\t ]+$/, '  ')
+    formattedTemplate = extraIndentation + formattedTemplate.replace(/\n/g, `\n${extraIndentation}`)
   }
 
   return formattedTemplate
 }
 
+function modifyComments(str) {
+  const regex = /(\s*)<!--[\s\S]*?-->/g
+
+  return str.replace(regex, (match) => {
+    const lines = match.split('\n')
+
+    // If it's a single-line comment, return it unchanged
+    if (lines.length === 1) {
+      return match
+    }
+
+    // Process multi-line comments
+    const modifiedLines = lines.map((line, index) => {
+      if (index === 0) {
+        return line
+      } else {
+        return '  ' + line
+      }
+    })
+
+    return modifiedLines.join('\n')
+  })
+}
+
 function createEdit(document, start, end, newText) {
   const startPosition = document.positionAt(start)
   const endPosition = document.positionAt(end)
-  return new vscode.TextEdit(
-    new vscode.Range(startPosition, endPosition),
-    newText
-  )
+  return new vscode.TextEdit(new vscode.Range(startPosition, endPosition), newText)
 }
 
 function formatJS(document, currentDoc, fileExtension) {
@@ -74,11 +95,7 @@ function formatJS(document, currentDoc, fileExtension) {
   return templates.map(({ start, end, template }) => {
     const stringChar = template.slice(-1)
     const templateText = template.slice(1, -1)
-    const formattedTemplate = formatTemplate(
-      templateText,
-      'angular',
-      ' '.repeat(4)
-    )
+    const formattedTemplate = formatTemplate(templateText, 'angular', ' '.repeat(4))
     const newText = `${stringChar}\n${formattedTemplate}${stringChar}`
     return createEdit(document, start, end, newText)
   })
@@ -101,9 +118,7 @@ function formatBlits(document, currentDoc) {
 }
 
 module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
-  const autoFormatEnabled = vscode.workspace
-    .getConfiguration('blits')
-    .get('autoFormat')
+  const autoFormatEnabled = vscode.workspace.getConfiguration('blits').get('autoFormat')
 
   if (!autoFormatEnabled) return
 
