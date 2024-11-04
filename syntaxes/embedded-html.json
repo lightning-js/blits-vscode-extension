@@ -10,6 +10,39 @@
       "end": "[`']",
       "patterns": [
         {
+          "match": "(<\\/?)(Applet|Acronym|Basefont|BaseFont|Bgsound|BgSound|Big|Blink|Center|Dir|Embed|Font|Frameset|Isindex|IsIndex|Ilayer|Keygen|Listing|Layer|Menuitem|MenuItem|Menu|Multicol|Nobr|Noembed|NoEmbed|Noframes|NoFrames|Plaintext|PlainText|Param|S|Strike|Spacer|Tt|U|Xmp|Frame|Marquee)(\\s+|\\s*?>)",
+          "name": "meta.tag.other.unrecognized.html.derivative",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.html"
+            },
+            "3": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          }
+        },
+        {
+          "begin": "((?!:)[A-Za-z0-9:.-_@]+)\\s*=\\s*(\")",
+          "beginCaptures": {
+            "1": {
+              "name": "entity.other.attribute-name.html"
+            },
+            "2": {
+              "name": "string.quoted.double"
+            }
+          },
+          "end": "(\")(?=\\s|>)",
+          "endCaptures": {
+            "0": {
+              "name": "string.quoted.double"
+            }
+          },
+          "contentName": "string.quoted.double"
+        },
+        {
           "include": "text.html.derivative"
         },
         {
@@ -38,7 +71,7 @@
       ]
     },
     {
-      "begin": "\\s+(align)\\s*=\\s*\"",
+      "begin": "\\s+(align|alink|background|bgcolor|border|clear|height|hspace|language|link|nowrap|start|text|type|vlink|vspace|width)\\s*=\\s*\"",
       "beginCaptures": {
         "1": {
           "name": "entity.other.attribute-name.html"
