@@ -17,9 +17,11 @@
 
 const parser = require('@babel/parser')
 
-module.exports = (code, fileExtension) => {
-  let plugins = []
-  if (fileExtension === 'ts') {
+// @ts-nocheck
+const parseAST = (code, fileExtension) => {
+  const plugins = ['classProperties', 'objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator']
+
+  if (fileExtension === 'ts' || fileExtension === 'tsx') {
     plugins.push('typescript')
   }
 
@@ -27,9 +29,12 @@ module.exports = (code, fileExtension) => {
     return parser.parse(code, {
       sourceType: 'module',
       plugins: plugins,
+      errorRecovery: true,
     })
   } catch (e) {
-    console.error('error parsing AST')
+    console.error('Error parsing AST:', e)
     return null
   }
 }
+
+module.exports = parseAST

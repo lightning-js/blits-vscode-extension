@@ -23,24 +23,16 @@ const parse = require('../parsers')
 const getCompletionItems = async (document, currentDoc, position, isBlits) => {
   let isCursorInsideTemplate = false
   if (isBlits) {
-    isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(
-      document,
-      currentDoc,
-      position
-    )
+    isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(document, currentDoc, position)
   } else {
     const ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
-    isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(
-      document,
-      ast,
-      position
-    )
+    isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(document, ast, position)
   }
 
   if (isCursorInsideTemplate) {
+    console.log('Cursor inside template')
     const currentLine = document.lineAt(position).text
-    const { tagName, attributes } =
-      templateHelper.getExistingTagAndAttributes(currentLine)
+    const { tagName, attributes } = templateHelper.getExistingTagAndAttributes(currentLine)
 
     if (tagName) {
       if (tagName === 'Element') {
@@ -48,19 +40,13 @@ const getCompletionItems = async (document, currentDoc, position, isBlits) => {
       } else {
         let ast
         if (isBlits) {
-          const { content, language } =
-            templateHelper.getScriptContentForBlits(currentDoc)
+          const { content, language } = templateHelper.getScriptContentForBlits(currentDoc)
           ast = parse.AST(content, language)
         } else {
           ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
         }
 
-        return await completionItems.componentProps.suggest(
-          tagName,
-          attributes,
-          document,
-          ast
-        )
+        return await completionItems.componentProps.suggest(tagName, attributes, document, ast)
       }
     }
   }
@@ -69,11 +55,7 @@ const getCompletionItems = async (document, currentDoc, position, isBlits) => {
 }
 
 module.exports = vscode.languages.registerCompletionItemProvider(
-  [
-    { language: 'javascript' },
-    { language: 'typescript' },
-    { language: 'blits' },
-  ],
+  [{ language: 'javascript' }, { language: 'typescript' }, { language: 'blits' }],
   {
     async provideCompletionItems(document, position, token, context) {
       const currentDoc = document.getText()
