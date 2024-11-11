@@ -42,6 +42,7 @@ const baseCompilerOptions = {
   baseUrl: projectRoot,
   paths: {
     '*': ['node_modules/*'],
+    '*.blits': 'blits.d.ts',
   },
   include: ['blits.d.ts', '**/*.ts', '**/*.js', '**/*.blits'],
 }
