@@ -17,18 +17,17 @@
 
 const parser = require('@babel/parser')
 
-// @ts-nocheck
 const parseAST = (code, fileExtension) => {
-  const plugins = ['classProperties', 'objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator']
+  const pluginList = ['objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator']
 
   if (fileExtension === 'ts' || fileExtension === 'tsx') {
-    plugins.push('typescript')
+    pluginList.push('typescript')
   }
 
   try {
     return parser.parse(code, {
       sourceType: 'module',
-      plugins: plugins,
+      plugins: pluginList,
       errorRecovery: true,
     })
   } catch (e) {

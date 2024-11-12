@@ -14,7 +14,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+// @ts-ignore
 const vscode = require('vscode')
 const traverse = require('@babel/traverse').default
 
@@ -25,12 +25,7 @@ const findTemplateRanges = (ast) => {
     traverse(ast, {
       ObjectProperty(path) {
         // Handle both Identifier and StringLiteral keys
-        const keyName =
-          path.node.key.type === 'Identifier'
-            ? path.node.key.name
-            : path.node.key.type === 'StringLiteral'
-            ? path.node.key.value
-            : null
+        const keyName = getKeyName(path.node)
 
         if (keyName === 'template') {
           const valueNode = path.node.value
@@ -49,6 +44,21 @@ const findTemplateRanges = (ast) => {
   }
 
   return ranges
+}
+
+function getKeyName(node) {
+  // Check if the key is an Identifier
+  if (node.key.type === 'Identifier') {
+    return node.key.name
+  }
+
+  // Check if the key is a StringLiteral
+  if (node.key.type === 'StringLiteral') {
+    return node.key.value
+  }
+
+  // If it's neither an Identifier nor a StringLiteral, return null
+  return null
 }
 
 const findTemplateRange = (ast) => {

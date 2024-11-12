@@ -201,13 +201,15 @@
     }
   },
   "dependencies": {
-    "@babel/parser": "^7.22.11",
     "@babel/traverse": "^7.23.2",
     "fs-extra": "^11.1.1",
     "prettier": "^2.8.8",
     "typescript": "^5.6.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/parser": "^7.26.2",
+    "@babel/preset-typescript": "^7.26.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.18.108",
     "@types/vscode": "^1.81.0",
