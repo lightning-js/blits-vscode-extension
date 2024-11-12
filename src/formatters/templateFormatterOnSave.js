@@ -55,6 +55,7 @@ function formatTemplate(template, parser, extraIndentation = '') {
     formattedTemplate = extraIndentation + formattedTemplate.replace(/\n/g, `\n${extraIndentation}`)
   }
 
+  formattedTemplate = formattedTemplate.trimEnd()
   return formattedTemplate
 }
 
