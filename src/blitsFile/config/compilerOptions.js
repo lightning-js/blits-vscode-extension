@@ -45,6 +45,7 @@ const baseCompilerOptions = {
     '*.blits': 'blits.d.ts',
   },
   include: ['blits.d.ts', '**/*.ts', '**/*.js', '**/*.blits'],
+  resolveJsonModule: true,
 }
 
 const jsSpecificOptions = {
