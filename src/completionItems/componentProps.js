@@ -27,13 +27,8 @@ const createCompletionItems = (props, attributes) => {
     if (attributes.includes(prop.key)) return []
 
     const createItem = (prefix = '') => {
-      const item = new vscode.CompletionItem(
-        `${prefix}${prop.key}`,
-        vscode.CompletionItemKind.Property
-      )
-      item.insertText = new vscode.SnippetString(
-        `${prop.key}="${prop.default || ''}$0"`
-      )
+      const item = new vscode.CompletionItem(`${prefix}${prop.key}`, vscode.CompletionItemKind.Property)
+      item.insertText = new vscode.SnippetString(`${prop.key}="${prop.default || ''}$0"`)
       item.sortText = `0${prefix}${prop.key}`
       return item
     }
@@ -46,8 +41,7 @@ const parseComponent = (attributes, componentFileContent, fileExtension) => {
   let ast, props
 
   if (fileExtension === 'blits') {
-    const { content, language } =
-      templateHelper.getScriptContentForBlits(componentFileContent)
+    const { content, language } = templateHelper.getScriptContentForBlits(componentFileContent)
     ast = parse.AST(content, language)
   } else {
     ast = parse.AST(componentFileContent)
@@ -74,11 +68,7 @@ const suggest = async (tag, attributes, doc, docAst) => {
       const componentFileContent = await fs.readFile(componentFilePath, 'utf-8')
 
       if (componentFileContent) {
-        completionItems = parseComponent(
-          attributes,
-          componentFileContent,
-          fileExtension
-        )
+        completionItems = parseComponent(attributes, componentFileContent, fileExtension)
       }
     } catch (err) {
       console.error('Error parsing component:', err)
