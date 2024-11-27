@@ -34,7 +34,10 @@ module.exports = vscode.commands.registerCommand('blits-vscode.commentCommand', 
     if (isBlits) {
       isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(document, currentDoc, cursorPosition)
     } else {
-      const currentDocAst = parse.AST(currentDoc)
+      const currentDocAst = parse.AST(
+        currentDoc,
+        document.languageId === 'typescript' || document.languageId === 'tsx' ? 'ts' : 'js'
+      )
       isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(document, currentDocAst, cursorPosition)
     }
 
@@ -51,44 +54,23 @@ module.exports = vscode.commands.registerCommand('blits-vscode.commentCommand', 
           endLine = selection.end.line
         }
 
-        const isBlockSelection = endLine > startLine
-
         for (let i = startLine; i <= endLine; i++) {
           const line = document.lineAt(i)
-          let lineText = line.text.replace(/^\s*/, '')
+          let lineText = line.text
+          // Skip the line if it's empty or contains only whitespace
+          if (/^\s*$/.test(lineText)) {
+            continue
+          }
           let selectionRange = line.range
-          const leadingWhitespace = line.text.match(/^\s*/)[0]
+          const leadingWhitespaceMatch = line.text.match(/^\s*/)
+          const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : ''
 
-          // Check if the line is already an HTML comment
           if (isLineCommented(lineText)) {
-            // Remove the comment from single line comment
-            if (!isBlockSelection) {
-              lineText = line.text.replace(/^(\s*)<!-- (.*) -->/g, '$1$2')
-            } else {
-              if (i === startLine) {
-                lineText = line.text.replace(/^(\s*)<!-- (.*)/g, '$1$2')
-              } else if (i === endLine) {
-                lineText = line.text.replace(/(.*) -->/g, '$1')
-              }
-            }
+            // Uncomment the line by removing <!-- and -->
+            lineText = lineText.replace(/^(\s*)<!--\s?/, '$1').replace(/\s?-->\s*$/, '')
           } else {
-            // Add a comment
-            if (isLineTemplateStart(lineText)) {
-              lineText = document.getText(selection)
-              selectionRange = selection
-            }
-
-            if (isBlockSelection) {
-              if (i === startLine) {
-                lineText = `${leadingWhitespace}<!-- ${lineText}`
-              } else if (i === endLine) {
-                lineText = `${leadingWhitespace}${lineText} -->`
-              } else {
-                lineText = line.text
-              }
-            } else {
-              lineText = `${leadingWhitespace}<!-- ${lineText} -->`
-            }
+            // Comment the line by adding <!-- and -->
+            lineText = `${leadingWhitespace}<!-- ${lineText.trim()} -->`
           }
 
           // Replace the line in the editor
@@ -103,9 +85,10 @@ module.exports = vscode.commands.registerCommand('blits-vscode.commentCommand', 
 })
 
 const isLineCommented = (lineText) => {
-  return lineText.match(/<!-- .* -->|<!-- .*|.* -->/)
+  // Matches lines that start with <!-- and end with -->
+  return /^\s*<!--(?:\s*<!--)*\s*.*\s*(?:-->\s*)*-->$/g.test(lineText)
 }
 
-const isLineTemplateStart = (lineText) => {
-  return lineText.match(/^\s*template\s*:\s*(\/\*.*?\*\/)?\s*[`']/)
-}
+// const isLineTemplateStart = (lineText) => {
+//   return /^\s*template\s*:\s*(\/\*.*?\*\/)?\s*[`'"]/g.test(lineText)
+// }

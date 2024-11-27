@@ -45,7 +45,7 @@ function getAutoFormatConfig() {
 
 function formatTemplate(template, parser, extraIndentation = '') {
   const config = getAutoFormatConfig()
-  template = template.replace(/^\s*/gm, '')
+  template.replace(/^\s+(?=\S)/gm, '')
 
   // process multiline comments
   template = modifyComments(template)
@@ -55,6 +55,7 @@ function formatTemplate(template, parser, extraIndentation = '') {
     formattedTemplate = extraIndentation + formattedTemplate.replace(/\n/g, `\n${extraIndentation}`)
   }
 
+  formattedTemplate = formattedTemplate.trimEnd()
   return formattedTemplate
 }
 

@@ -5,7 +5,7 @@
     "resolveJsonModule": true,
 		"module": "commonjs",
 		"target": "ES2020",
-		"checkJs": true,
+		"checkJs": false,
 		"lib": [
 			"ES2020"
 		]

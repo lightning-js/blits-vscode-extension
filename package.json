@@ -3,7 +3,7 @@
   "publisher": "lightningjs",
   "displayName": "Lightning Blits",
   "description": "Template syntax highlighting and code completion for the Lightning Blits framework",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightning-js/blits-vscode-extension.git"
@@ -201,13 +201,15 @@
     }
   },
   "dependencies": {
-    "@babel/parser": "^7.22.11",
     "@babel/traverse": "^7.23.2",
     "fs-extra": "^11.1.1",
     "prettier": "^2.8.8",
     "typescript": "^5.6.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/parser": "^7.26.2",
+    "@babel/preset-typescript": "^7.26.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^16.18.108",
     "@types/vscode": "^1.81.0",

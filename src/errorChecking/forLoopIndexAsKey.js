@@ -18,27 +18,41 @@
 const vscode = require('vscode')
 const templateHelper = require('../helpers/template')
 const parse = require('../parsers')
+const path = require('path')
+
+// Allowed file extensions
+const ALLOWED_EXTENSIONS = ['.js', '.ts', '.blits']
+
+function shouldProcessFile(document) {
+  let fileName = document.fileName
+  if (fileName.endsWith('.git')) {
+    fileName = fileName.slice(0, -4)
+  }
+
+  const extension = path.extname(fileName)
+  const isAllowedExtension = ALLOWED_EXTENSIONS.includes(extension)
+  const isValidScheme = document.uri.scheme === 'file' || (document.uri.scheme === 'git' && extension === '.blits')
+  const isInWorkspace =
+    !fileName.includes('node_modules') && vscode.workspace.getWorkspaceFolder(document.uri) !== undefined
+  return isAllowedExtension && isValidScheme && isInWorkspace
+}
 
 module.exports = (context, diagnosticsCollection) => {
   const checkForLoopIndexAsKey = (document) => {
-    // Clear previous diagnostics for this document
-    diagnosticsCollection.clear()
+    if (shouldProcessFile(document)) {
+      // Clear previous diagnostics for this document
+      diagnosticsCollection.clear()
 
-    const currentDoc = document.getText()
-    const isBlits = document.languageId === 'blits'
+      const currentDoc = document.getText()
+      const isBlits = document.languageId === 'blits'
 
-    const diagnostics = analyzeForLoopKeyAttribute(
-      document,
-      currentDoc,
-      isBlits
-    )
-    diagnosticsCollection.set(document.uri, diagnostics)
-    context.subscriptions.push(diagnosticsCollection)
+      const diagnostics = analyzeForLoopKeyAttribute(document, currentDoc, isBlits)
+      diagnosticsCollection.set(document.uri, diagnostics)
+      context.subscriptions.push(diagnosticsCollection)
+    }
   }
 
-  vscode.workspace.onDidChangeTextDocument((event) =>
-    checkForLoopIndexAsKey(event.document)
-  )
+  vscode.workspace.onDidChangeTextDocument((event) => checkForLoopIndexAsKey(event.document))
   vscode.workspace.onDidOpenTextDocument(checkForLoopIndexAsKey)
 }
 
@@ -47,14 +61,12 @@ function analyzeForLoopKeyAttribute(document, currentDoc, isBlits) {
 
   let templateSections = []
   if (isBlits) {
-    const template = templateHelper.getTemplateTextForBlits(
-      document,
-      currentDoc
-    )
+    const template = templateHelper.getTemplateTextForBlits(document, currentDoc)
     if (template) {
       templateSections.push(template)
     }
   } else {
+    console.log(`for loop: parsing AST : ${document.uri.fsPath}`)
     const ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
     templateSections = templateHelper.getTemplateText(ast, currentDoc) || []
   }
@@ -72,9 +84,7 @@ function analyzeForLoopKeyAttribute(document, currentDoc, isBlits) {
         //     vscode.DiagnosticSeverity.Information
         //   )
         // )
-      } else if (
-        keyUsesIndex(forLoop.keyAttribute, forLoop.forExpression.indexVariable)
-      ) {
+      } else if (keyUsesIndex(forLoop.keyAttribute, forLoop.forExpression.indexVariable)) {
         diagnostics.push(
           createDiagnostic(
             forLoop.keyAttributeRange || forLoop.range, // Use keyAttributeRange if available
@@ -91,10 +101,7 @@ function analyzeForLoopKeyAttribute(document, currentDoc, isBlits) {
 
 function keyUsesIndex(keyAttribute, indexVariable) {
   if (!indexVariable) return false
-  const indexRegex = new RegExp(
-    '\\$' + indexVariable + '(?:\\b|\\s*[+\\-*/])',
-    'g'
-  )
+  const indexRegex = new RegExp('\\$' + indexVariable + '(?:\\b|\\s*[+\\-*/])', 'g')
 
   return indexRegex.test(keyAttribute)
 }
@@ -122,9 +129,7 @@ function findForLoops(templateInfo, document) {
     // Handle multi-line tags
     let fullTag = fullMatch
     if (!fullTag.includes('>')) {
-      const remainingTemplate = templateText.slice(
-        match.index + fullMatch.length
-      )
+      const remainingTemplate = templateText.slice(match.index + fullMatch.length)
       const closingTagIndex = remainingTemplate.indexOf('>')
       if (closingTagIndex !== -1) {
         fullTag += remainingTemplate.slice(0, closingTagIndex + 1)
@@ -166,17 +171,12 @@ function findForLoops(templateInfo, document) {
 
     const forParts = forExpression.split(/\s+in\s+/)
     const itemVariable = forParts[0].replace(/[()]/g, '').split(',')[0].trim()
-    const indexVariable = forParts[0].includes(',')
-      ? forParts[0].replace(/[()]/g, '').split(',')[1].trim()
-      : null
+    const indexVariable = forParts[0].includes(',') ? forParts[0].replace(/[()]/g, '').split(',')[1].trim() : null
     const iterableExpression = forParts[1]
 
     forLoops.push({
       tagName,
-      range: new vscode.Range(
-        document.positionAt(startIndex),
-        document.positionAt(endIndex)
-      ),
+      range: new vscode.Range(document.positionAt(startIndex), document.positionAt(endIndex)),
       attributes,
       forExpression: {
         itemVariable,
