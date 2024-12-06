@@ -18,4 +18,5 @@
 module.exports = {
   componentProps: require('./componentProps'),
   elementProps: require('./elementProps'),
+  componentNames: require('./componentNames'),
 }

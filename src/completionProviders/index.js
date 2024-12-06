@@ -17,4 +17,5 @@
 
 module.exports = {
   templateAttributes: require('./templateAttributes'),
+  templateTags: require('./templateTags'),
 }
