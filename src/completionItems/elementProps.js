@@ -27,10 +27,7 @@ let elementPropsParsed = false
 const parseProps = async () => {
   // get element/renderer props from Blits codebase
   const projectRootPath = vscode.workspace.workspaceFolders[0].uri.fsPath
-  const blitsElementJsPath = path.join(
-    projectRootPath,
-    'node_modules/@lightningjs/blits/src/engines/L3/element.js'
-  )
+  const blitsElementJsPath = path.join(projectRootPath, 'node_modules/@lightningjs/blits/src/engines/L3/element.js')
   let code = ''
   try {
     const fileExists = await fs.pathExists(blitsElementJsPath)
@@ -56,17 +53,10 @@ const parseProps = async () => {
   traverse(ast, {
     VariableDeclarator({ node }) {
       // Check if the variable declarator is for 'propsTransformer'
-      if (
-        node.id.name === 'propsTransformer' &&
-        node.init.type === 'ObjectExpression'
-      ) {
+      if (node.id.name === 'propsTransformer' && node.init.type === 'ObjectExpression') {
         // Traverse properties of the 'propsTransformer' object
         node.init.properties.forEach((property) => {
-          if (
-            property.type === 'ObjectMethod' &&
-            property.kind === 'set' &&
-            property.key.type === 'Identifier'
-          ) {
+          if (property.type === 'ObjectMethod' && property.kind === 'set' && property.key.type === 'Identifier') {
             // Extract the name of the setter method
             elementProps.push(property.key.name)
           }
@@ -95,10 +85,7 @@ const suggest = async (attributes) => {
   let completionItems = []
   elementProps.forEach((prop) => {
     if (!attributes.includes(prop)) {
-      const completionItem = new vscode.CompletionItem(
-        prop,
-        vscode.CompletionItemKind.Property
-      )
+      const completionItem = new vscode.CompletionItem(prop, vscode.CompletionItemKind.Property)
       completionItem.insertText = new vscode.SnippetString(`${prop}="$0"`)
       completionItems.push(completionItem)
     }
