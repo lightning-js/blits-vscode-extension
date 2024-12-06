@@ -38,7 +38,10 @@
     ],
     "quotes": [
       "error",
-      "single"
+      "single",
+      {
+        "avoidEscape": true
+      }
     ],
     "semi": [
       "error",
@@ -60,9 +63,14 @@
   },
   "overrides": [
     {
-      "files": ["*.js"],
+      "files": [
+        "*.js"
+      ],
       "rules": {
-        "semi": ["error", "never"]
+        "semi": [
+          "error",
+          "never"
+        ]
       }
     }
   ]
