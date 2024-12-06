@@ -211,8 +211,6 @@ function parseComponentConfig(ast) {
   return { components, props }
 }
 
-// Main analysis function
-// Main analysis function with imported components support
 // Helper function to get the correct source code based on file type
 function getSourceForAnalysis(sourceCode, fileExtension) {
   if (fileExtension === 'blits') {
@@ -229,7 +227,6 @@ function getSourceForAnalysis(sourceCode, fileExtension) {
   }
 }
 
-// Main analysis function with .blits file support
 async function analyzeBlitsComponent(
   sourceCode,
   fileExtension = 'js',
@@ -237,7 +234,6 @@ async function analyzeBlitsComponent(
   analyzedPaths = new Set()
 ) {
   try {
-    // Get the appropriate source code and language based on file type
     const { content, language } = getSourceForAnalysis(sourceCode, fileExtension)
     const ast = parse.AST(content, language)
 

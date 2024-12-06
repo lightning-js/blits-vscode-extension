@@ -39,22 +39,6 @@ const suggest = async (componentData) => {
   completionItems.push(createSeparator('Built-in Components'))
 
   const element = new vscode.CompletionItem('Element', vscode.CompletionItemKind.Class)
-
-  // element.detail = 'Core building block for rendering and styling'
-
-  // // Full documentation shown in the hover panel
-  // const elementDocs = new vscode.MarkdownString()
-  // elementDocs.appendMarkdown('The core building block of a Blits template that represents a Lightning 3 Renderer node.\n\n')
-  // elementDocs.appendMarkdown('**Usage:**\n')
-  // elementDocs.appendCodeblock('<Element x="10" y="20" color="#ff0000" />', 'xml')
-  // elementDocs.appendMarkdown('\n**Features:**\n')
-  // elementDocs.appendMarkdown('- Direct mapping to Lightning 3 Renderer nodes\n')
-  // elementDocs.appendMarkdown('- Supports positioning and visual properties\n')
-
-  // element.documentation = elementDocs
-  // element.sortText = '0-Element'
-
-  // Use documentation directly for immediate display
   const elementDocs = new vscode.MarkdownString()
   elementDocs.appendMarkdown('Core building block of a Blits template that represents a Lightning 3 Renderer node.\n\n')
   elementDocs.appendCodeblock('<Element x="10" y="20" color="#ff0000" />', 'xml')
@@ -72,7 +56,6 @@ const suggest = async (componentData) => {
   completionItems.push(element)
 
   const layout = new vscode.CompletionItem('Layout', vscode.CompletionItemKind.Class)
-
   const layoutDocs = new vscode.MarkdownString()
   layoutDocs.appendMarkdown(
     'Automatically positions child elements in a horizontal or vertical layout with customizable spacing and alignment.\n\n'
@@ -128,7 +111,6 @@ const suggest = async (componentData) => {
 
   // RouterView Component
   const routerView = new vscode.CompletionItem('RouterView', vscode.CompletionItemKind.Class)
-
   const routerViewDocs = new vscode.MarkdownString()
   routerViewDocs.appendMarkdown(
     'Acts as a placeholder component that displays the currently active route component. Pages are rendered inside RouterView based on the current route.\n\n'
