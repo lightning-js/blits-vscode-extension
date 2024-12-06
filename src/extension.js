@@ -66,6 +66,8 @@ async function activate(context) {
       context.subscriptions.push(completionProviders.templateAttributes)
     }
 
+    context.subscriptions.push(completionProviders.templateTags)
+
     // comment command wrapper for template section
     context.subscriptions.push(commands.commentCommand)
 

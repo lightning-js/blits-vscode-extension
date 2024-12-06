@@ -30,7 +30,6 @@ const getCompletionItems = async (document, currentDoc, position, isBlits) => {
   }
 
   if (isCursorInsideTemplate) {
-    console.log('Cursor inside template')
     const currentLine = document.lineAt(position).text
     const { tagName, attributes } = templateHelper.getExistingTagAndAttributes(currentLine)
 
