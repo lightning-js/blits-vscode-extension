@@ -212,26 +212,44 @@ const getTemplateTextForBlits = (document, text, includeTemplateTags = false) =>
 const getBlitsFileWithoutLicense = (text) => {
   // Regular expression to match a block comment at the start of the file
   const licenseRegex = /^\s*\/\*[\s\S]*?\*\/\s*/
-
   const match = text.match(licenseRegex)
 
-  if (match) {
-    const licenseEnd = match[0].length
-    const contentWithoutLicense = text.slice(licenseEnd).trim()
+  const licenseEnd = match ? match[0].length : 0
+  const contentWithoutLicense = text.slice(licenseEnd).trim()
 
-    return {
-      content: contentWithoutLicense,
-      start: licenseEnd,
-      end: text.length,
-    }
-  } else {
-    // If no license found, return the original text with positions
-    return {
-      content: text,
-      start: 0,
-      end: text.length,
+  const result = {}
+
+  // Extract template part
+  const templateRegex = /<template>([\s\S]*?)<\/template>/
+  const templateMatch = contentWithoutLicense.match(templateRegex)
+  if (templateMatch) {
+    result.template = {
+      content: templateMatch[0], // Including <template> and </template> tags
+      start: licenseEnd + templateMatch.index,
+      end: licenseEnd + templateMatch.index + templateMatch[0].length,
     }
   }
+
+  // Extract script part
+  const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/
+  const scriptMatch = contentWithoutLicense.match(scriptRegex)
+  if (scriptMatch) {
+    const scriptAttributes = scriptMatch[1].trim()
+    const langMatch = scriptAttributes.match(/lang=['"]?(ts|js)['"]?/)
+    const lang = langMatch ? langMatch[1] : 'js' // Default to 'js' if no lang attribute or invalid value
+
+    const scriptContentStart = licenseEnd + scriptMatch.index + scriptMatch[0].indexOf('>') + 1
+    const scriptContentEnd = scriptContentStart + scriptMatch[2].length
+
+    result.script = {
+      content: scriptMatch[2],
+      start: scriptContentStart,
+      end: scriptContentEnd,
+      lang: lang,
+    }
+  }
+
+  return result
 }
 
 const getScriptContentForBlits = (text) => {
@@ -320,7 +338,6 @@ const isCursorInsideTag = (document, position) => {
   const range = new vscode.Range(start, position)
   const textUpToCursor = document.getText(range)
   const result = /<[^>]*([\s\S]*?)$/.test(textUpToCursor)
-  console.log('isCursorInsideTag', result)
   // Multiline regex to check for an unclosed opening tag before the cursor
   return result
 }
@@ -352,9 +369,9 @@ const getExistingTagAndAttributes = (line) => {
 
 const getTagContext = (document, position) => {
   const textBeforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
-  const textAfterCursor = document.getText(
-    new vscode.Range(position, new vscode.Position(document.lineCount - 1, Number.MAX_VALUE))
-  )
+  // const textAfterCursor = document.getText(
+  //   new vscode.Range(position, new vscode.Position(document.lineCount - 1, Number.MAX_VALUE))
+  // )
 
   let tagContext = {
     insideTag: false,
