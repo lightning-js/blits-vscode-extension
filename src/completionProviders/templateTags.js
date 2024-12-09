@@ -344,7 +344,6 @@ const getCompletionItems = async (document, currentDoc, position, isBlits, fileP
 
   if (isCursorInsideTemplate) {
     const componentData = await analyzeBlitsComponent(currentDoc, fileExt, filePath)
-    console.log(JSON.stringify(componentData, null, 2))
     return await completionItems.componentNames.suggest(componentData)
   }
 
