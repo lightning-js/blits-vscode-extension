@@ -18,7 +18,7 @@
 const parser = require('@babel/parser')
 
 const parseAST = (code, fileExtension) => {
-  const pluginList = ['objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator', 'flow']
+  const pluginList = ['objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator']
 
   if (fileExtension === 'ts' || fileExtension === 'tsx') {
     pluginList.push('typescript')
