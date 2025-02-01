@@ -129,6 +129,9 @@
           "include": "#blits-reactive-attributes"
         },
         {
+          "include": "#blits-event-attributes"
+        },
+        {
           "include": "#blits-regular-attributes"
         }
       ]
@@ -159,6 +162,43 @@
         },
         {
           "include": "source.js"
+        }
+      ]
+    },
+    "blits-event-attributes": {
+      "patterns": [
+        {
+          "name": "meta.attribute.handler.blits",
+          "match": "\\B(@(?:loaded|error))\\s*=\\s*\"([$][a-zA-Z_][a-zA-Z0-9_.-]*)\"",
+          "captures": {
+            "1": {
+              "name": "keyword.control"
+            },
+            "2": {
+              "name": "support.function"
+            }
+          }
+        },
+        {
+          "name": "invalid.illegal.handler-value",
+          "match": "\\B@(?:loaded|error)\\s*=\\s*\"(?!\\$)[^\"]*\"",
+          "captures": {
+            "0": {
+              "name": "invalid.illegal.attribute.value.blits"
+            }
+          }
+        },
+        {
+          "name": "invalid.illegal.attribute.blits",
+          "match": "\\B(@(?!loaded|error)[a-zA-Z-]+)\\s*=\\s*(\"[^\"]*\")",
+          "captures": {
+            "1": {
+              "name": "invalid.illegal.attribute.name.blits"
+            },
+            "2": {
+              "name": "invalid.illegal.attribute.value.blits"
+            }
+          }
         }
       ]
     },
