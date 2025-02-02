@@ -85,7 +85,6 @@ function dispose() {
 }
 
 function isBlitsApp() {
-  console.log('isBlitsApp:', isBlits)
   return isBlits
 }
 

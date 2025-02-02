@@ -49,7 +49,7 @@ const getAllTemplates = (document) => {
   }
 
   const ast = getASTForDocument(document)
-  return _getTemplateText(ast, currentDoc).map((t) => ({
+  return getAllComponentTemplates(ast, currentDoc).map((t) => ({
     ...t,
     type: 'template-literal',
   }))
@@ -124,64 +124,133 @@ const getBlitsFileContent = (document) => {
   return result
 }
 
-const _getTemplateText = (ast, sourceCode) => {
-  let templateTexts = []
+const getAllComponentTemplates = (ast, sourceCode) => {
+  const ranges = []
 
-  if (ast) {
-    traverse(ast, {
-      CallExpression(path) {
-        const callee = path.node.callee
-        // Check that callee is a MemberExpression
-        if (callee.type !== 'MemberExpression') return
+  traverse(ast, {
+    // Handle Blits.Component and Blits.Application calls
+    CallExpression(path) {
+      const callee = path.node.callee
 
-        // Now that we know it's a MemberExpression, we can safely access .object and .property
-        const member = callee
-        if (member.object.type !== 'Identifier' || member.object.name !== 'Blits') return
+      if (
+        callee.type === 'MemberExpression' &&
+        callee.object.type === 'Identifier' &&
+        callee.object.name === 'Blits' &&
+        callee.property.type === 'Identifier' &&
+        (callee.property.name === 'Component' || callee.property.name === 'Application')
+      ) {
+        const configArgIndex = callee.property.name === 'Component' ? 1 : 0
+        if (path.node.arguments.length <= configArgIndex) return
 
-        if (
-          member.property.type !== 'Identifier' ||
-          (member.property.name !== 'Component' && member.property.name !== 'Application')
-        ) {
-          return
-        }
+        const configObject = path.node.arguments[configArgIndex]
+        if (configObject.type !== 'ObjectExpression') return
 
-        // Determine the argument index based on the method name
-        let argIndex = member.property.name === 'Component' ? 1 : 0
-
-        if (path.node.arguments.length <= argIndex) return
-
-        const argNode = path.node.arguments[argIndex]
-        if (argNode.type !== 'ObjectExpression') return
-
-        // Now we know argNode is an ObjectExpression
-        argNode.properties.forEach((property) => {
-          // Narrow property to ObjectProperty
-          if (property.type !== 'ObjectProperty') return
-
-          // Narrow key: ensure it's an Identifier
-          if (property.key.type !== 'Identifier' || property.key.name !== 'template') return
-
-          // Narrow value: ensure it's a TemplateLiteral
-          if (property.value.type !== 'TemplateLiteral') return
-
-          const templateNode = property.value
-          const start = templateNode.start
-          const end = templateNode.end
-          // Ensure start and end are numbers before slicing
-          if (typeof start !== 'number' || typeof end !== 'number') return
-
-          const templateText = sourceCode.substring(start, end)
-          templateTexts.push({
-            start,
-            end,
-            content: templateText,
-          })
+        configObject.properties.forEach((prop) => {
+          if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier' && prop.key.name === 'template') {
+            let unwrapped = null
+            if (prop.value.type === 'TemplateLiteral') {
+              // Unwrapped content without backticks
+              unwrapped = prop.value.quasis[0].value.raw
+            } else if (prop.value.type === 'StringLiteral') {
+              unwrapped = prop.value.value
+            }
+            if (unwrapped !== null) {
+              ranges.push({
+                start: prop.value.start,
+                end: prop.value.end,
+                content: sourceCode ? sourceCode.substring(prop.value.start, prop.value.end) : null,
+              })
+            }
+          }
         })
-      },
-    })
+      }
+    },
+
+    // Handle any object with a template property
+    ObjectExpression(path) {
+      path.node.properties.forEach((prop) => {
+        if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier' && prop.key.name === 'template') {
+          let unwrapped = null
+          if (prop.value.type === 'TemplateLiteral') {
+            unwrapped = prop.value.quasis[0].value.raw
+          } else if (prop.value.type === 'StringLiteral') {
+            unwrapped = prop.value.value
+          }
+          if (unwrapped !== null && _isValidTemplateString(unwrapped)) {
+            ranges.push({
+              start: prop.value.start,
+              end: prop.value.end,
+              content: sourceCode ? sourceCode.substring(prop.value.start, prop.value.end) : null,
+            })
+          }
+        }
+      })
+    },
+  })
+
+  return ranges
+}
+
+function _isValidTemplateString(str) {
+  // Early returns for empty or non-string inputs
+  if (!str || typeof str !== 'string') {
+    return false
   }
 
-  return templateTexts
+  // Trim whitespace but preserve newlines
+  str = str.replace(/^\s+|\s+$/gm, '')
+
+  // Quick checks for obvious template indicators
+  if (str.startsWith('<!--')) {
+    return true
+  }
+
+  // Look for reactive bindings or event handlers
+  if (str.includes(':') || str.includes('@')) {
+    const hasAttribute = /[:@][a-zA-Z][^=]*=/.test(str)
+    if (hasAttribute) {
+      return true
+    }
+  }
+
+  // Look for any tag-like structures, being permissive with whitespace
+  const hasTagLikeStructure =
+    /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*?>/.test(str) || /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*$/.test(str)
+
+  if (!hasTagLikeStructure) {
+    return false
+  }
+
+  // Check for template structure indicators (including incomplete)
+  const templateIndicators = [
+    // Complete tag with attributes across multiple lines
+    /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*?>/,
+    // Self-closing tag across multiple lines
+    /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*?\/>/,
+    // Closing tag (even incomplete)
+    /<\/[a-zA-Z][a-zA-Z0-9_-]*/,
+    // Incomplete opening tag with attributes
+    /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*$/,
+    // Tag with reactive binding or event handler
+    /<[a-zA-Z][a-zA-Z0-9_-]*[\s\S]*?[:@][a-zA-Z]/,
+  ]
+
+  // If we match any of these patterns, consider it a template
+  for (const pattern of templateIndicators) {
+    if (pattern.test(str)) {
+      // Check for text before the first '<'
+      const firstTagIndex = str.indexOf('<')
+      if (firstTagIndex > 0) {
+        const preText = str.slice(0, firstTagIndex).trim()
+        if (preText && !preText.startsWith('<!--')) {
+          return false
+        }
+      }
+      return true
+    }
+  }
+
+  return false
 }
 
 module.exports = {
@@ -191,4 +260,5 @@ module.exports = {
   getBlitsTemplate,
   getBlitsScript,
   getBlitsFileContent,
+  getAllComponentTemplates,
 }

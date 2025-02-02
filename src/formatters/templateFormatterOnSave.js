@@ -153,8 +153,13 @@ function formatDocument(document) {
       const indentation = type === 'template-literal' ? ' '.repeat(4) : ''
 
       const formattedTemplate = formatTemplate(templateText, 'angular', indentation)
+
       const newText =
-        type === 'template-literal' ? `${stringChar}\n${formattedTemplate}${stringChar}` : formattedTemplate
+        type === 'template-literal'
+          ? stringChar === '`'
+            ? `${stringChar}\n${formattedTemplate}${stringChar}`
+            : `${stringChar}${formattedTemplate.replace(/^\s*/, '')}${stringChar}`
+          : formattedTemplate
 
       edits.push(createEdit(document, start, end, newText))
     } catch (err) {

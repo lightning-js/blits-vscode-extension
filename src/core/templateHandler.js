@@ -16,7 +16,6 @@
  */
 
 const documentHandler = require('./documentHandler')
-const traverse = require('@babel/traverse').default
 const vscode = require('vscode')
 
 const isCursorInTemplate = (document, position) => {
@@ -58,98 +57,9 @@ const _isCursorInsideTemplateForBlits = (document, text, position) => {
 const _isCursorInsideComponentTemplate = (document, ast, position) => {
   if (!ast) return false
 
-  const ranges = _findComponentTemplateRanges(ast)
+  const ranges = documentHandler.getAllComponentTemplates(ast)
   const cursorOffset = document.offsetAt(position)
   return ranges.some(({ start, end }) => cursorOffset >= start && cursorOffset <= end)
-}
-
-// const _findComponentTemplateRanges = (ast) => {
-//   const ranges = []
-
-//   traverse(ast, {
-//     CallExpression(path) {
-//       const callee = path.node.callee
-
-//       // Check if it's a Blits.Component or Blits.Application call
-//       if (
-//         callee.type === 'MemberExpression' &&
-//         callee.object.name === 'Blits' &&
-//         (callee.property.name === 'Component' || callee.property.name === 'Application')
-//       ) {
-//         // For Component, config object is the second argument
-//         // For Application, config object is the first argument
-//         const configArgIndex = callee.property.name === 'Component' ? 1 : 0
-
-//         if (path.node.arguments.length > configArgIndex) {
-//           const configObject = path.node.arguments[configArgIndex]
-
-//           if (configObject.type === 'ObjectExpression') {
-//             configObject.properties.forEach((prop) => {
-//               if (prop.key.name === 'template' && prop.value.type === 'TemplateLiteral') {
-//                 ranges.push({
-//                   start: prop.value.start,
-//                   end: prop.value.end,
-//                 })
-//               }
-//             })
-//           }
-//         }
-//       }
-//     },
-//   })
-
-//   return ranges
-// }
-
-const _findComponentTemplateRanges = (ast) => {
-  const ranges = []
-
-  traverse(ast, {
-    CallExpression(path) {
-      const callee = path.node.callee
-
-      // Check if callee is a MemberExpression.
-      if (callee.type !== 'MemberExpression') return
-
-      // Ensure the object is an Identifier named "Blits"
-      if (callee.object.type !== 'Identifier' || callee.object.name !== 'Blits') return
-
-      // Ensure the property is an Identifier and check its name.
-      if (
-        callee.property.type !== 'Identifier' ||
-        (callee.property.name !== 'Component' && callee.property.name !== 'Application')
-      ) {
-        return
-      }
-
-      // For Component, the config object is the second argument;
-      // for Application, it's the first argument.
-      const configArgIndex = callee.property.name === 'Component' ? 1 : 0
-
-      if (path.node.arguments.length <= configArgIndex) return
-
-      const configObject = path.node.arguments[configArgIndex]
-      if (configObject.type !== 'ObjectExpression') return
-
-      configObject.properties.forEach((prop) => {
-        // Narrow prop to ObjectProperty (ignore ObjectMethod or SpreadElement)
-        if (prop.type !== 'ObjectProperty') return
-
-        // Ensure the key is an Identifier
-        if (prop.key.type !== 'Identifier') return
-
-        // Check for the 'template' property and that its value is a TemplateLiteral.
-        if (prop.key.name === 'template' && prop.value.type === 'TemplateLiteral') {
-          ranges.push({
-            start: prop.value.start,
-            end: prop.value.end,
-          })
-        }
-      })
-    },
-  })
-
-  return ranges
 }
 
 const _getExistingTagAndAttributes = (line) => {
