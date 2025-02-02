@@ -18,6 +18,7 @@
 const vscode = require('vscode')
 const prettier = require('prettier')
 const documentHandler = require('../core/documentHandler')
+const workspaceHandler = require('../core/workspaceHandler')
 
 const diagnosticCollection = vscode.languages.createDiagnosticCollection('blits-template')
 
@@ -188,6 +189,8 @@ function formatDocument(document) {
 }
 
 module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
+  if (!workspaceHandler.isBlitsApp()) return
+
   const autoFormatEnabled = vscode.workspace.getConfiguration('blits').get('autoFormat')
   if (!autoFormatEnabled) return
 

@@ -15,10 +15,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const parseAST = require('../../parsers/parseAST')
+const parseAST = require('../parsers/parseAST')
 const path = require('path')
 const fs = require('fs')
-const documentHandler = require('../documentHandler')
+const documentHandler = require('./documentHandler')
 
 const analyzeComponentsInDocument = async (document, analyzedPaths = new Set()) => {
   const sourceCode = document.getText()

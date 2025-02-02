@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const documentHandler = require('../documentHandler')
+const documentHandler = require('./documentHandler')
 const traverse = require('@babel/traverse').default
 const vscode = require('vscode')
 

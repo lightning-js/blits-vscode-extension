@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-const parseAST = require('../../parsers/parseAST')
+const parseAST = require('../parsers/parseAST')
 const traverse = require('@babel/traverse').default
 
 const getASTForDocument = (document) => {

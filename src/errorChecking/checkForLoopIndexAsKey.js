@@ -18,11 +18,16 @@
 const vscode = require('vscode')
 const path = require('path')
 const documentHandler = require('../core/documentHandler')
+const workspaceHandler = require('../core/workspaceHandler')
 
 // Allowed file extensions
 const ALLOWED_EXTENSIONS = ['.js', '.ts', '.blits']
 
 function shouldProcessFile(document) {
+  if (!workspaceHandler.isBlitsApp()) {
+    return false
+  }
+
   let fileName = document.fileName
   if (fileName.endsWith('.git')) {
     fileName = fileName.slice(0, -4)

@@ -16,6 +16,7 @@
  */
 
 const vscode = require('vscode')
+const workspaceHandler = require('./core/workspaceHandler')
 const templateCompletionProvider = require('./completionProviders/template')
 const commentCommand = require('./commands/commentCommand')
 const templateFormatterOnSave = require('./formatters/templateFormatterOnSave')
@@ -30,6 +31,9 @@ const packageJSON = require('../package.json')
 
 async function activate(context) {
   console.log('Lightning Blits is being activated.')
+
+  // init blits dependency check
+  workspaceHandler.init()
 
   try {
     // Blits file type features
@@ -72,6 +76,7 @@ async function activate(context) {
 
 function deactivate() {
   console.log('Lightning Blits is being deactivated.')
+  workspaceHandler.dispose()
 }
 
 module.exports = {

@@ -18,6 +18,7 @@
 const vscode = require('vscode')
 const templateHandler = require('../core/templateHandler')
 const componentHandler = require('../core/componentHandler')
+const workspaceHandler = require('../core/workspaceHandler')
 const componentNames = require('../completionItems/componentNames')
 const elementProps = require('../completionItems/elementProps')
 const componentProps = require('../completionItems/componentProps')
@@ -27,6 +28,10 @@ module.exports = vscode.languages.registerCompletionItemProvider(
   [{ language: 'javascript' }, { language: 'typescript' }, { language: 'blits' }],
   {
     async provideCompletionItems(document, position) {
+      if (!workspaceHandler.isBlitsApp()) {
+        return undefined
+      }
+
       if (!templateHandler.isCursorInTemplate(document, position)) {
         return undefined
       }

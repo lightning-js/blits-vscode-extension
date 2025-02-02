@@ -15,11 +15,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+const workspace = require('../workspaceHandler')
+
 // Built-in component types
 const BUILTIN_COMPONENTS = ['Element', 'Text', 'Layout', 'RouterView', 'Component']
 
+// Try to get framework attributes, fallback to hardcoded ones if not found
+const frameworkAttributes = workspace.getFrameworkAttributes()
+
 // Organized attribute definitions
-const attributes = {
+const attributes = frameworkAttributes || {
   x: {
     attrType: 'regular',
     types: ['number'],
