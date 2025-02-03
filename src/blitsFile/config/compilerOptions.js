@@ -159,12 +159,6 @@ function updateCompilerOptions() {
   tsCompilerOptions = mergeCompilerOptions(baseCompilerOptions, tsSpecificOptions, tsUserConfig)
   jsCompilerOptions = mergeCompilerOptions(baseCompilerOptions, jsSpecificOptions, jsUserConfig)
 
-  log('Updated TypeScript Compiler Options:')
-  console.log(tsCompilerOptions)
-
-  log('Updated JavaScript Compiler Options:')
-  console.log(jsCompilerOptions)
-
   notifyCompilerOptionsChanged()
 }
 
