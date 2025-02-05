@@ -161,7 +161,7 @@ const attributes = frameworkAttributes || {
     reactive: true,
     description:
       'The overflow attribute allows the element to extend beyond the specified height and width. Possible values are true or false.',
-    usedIn: ['Text'],
+    usedIn: ['Text', 'Element'],
   },
   content: {
     attrType: 'regular',
@@ -247,9 +247,8 @@ const attributes = frameworkAttributes || {
   },
   textoverflow: {
     attrType: 'regular',
-    types: ['enum'],
-    values: ['true', 'false'],
-    defaultValue: 'false',
+    types: ['string'],
+    defaultValue: null,
     reactive: true,
     description: 'The suffix to be added when text is cropped due to bounds limits. Defaults to ...',
     usedIn: ['Text'],
@@ -269,7 +268,7 @@ const attributes = frameworkAttributes || {
     defaultValue: null,
     reactive: true,
     description: 'Controls how much space will be added between each Element or Component.',
-    usedIn: ['Element', 'Text', 'Layout', 'RouterView'],
+    usedIn: ['Layout'],
   },
   is: {
     attrType: 'regular',
@@ -301,7 +300,7 @@ const attributes = frameworkAttributes || {
     defaultValue: null,
     reactive: true,
     description: 'Conditionally shows and hides Components and Elements.',
-    usedIn: ['Element', 'Text', 'Layout', 'RouterView'],
+    usedIn: ['Element', 'Text', 'Layout', 'RouterView', 'Component'],
   },
   'align-items': {
     attrType: 'regular',
@@ -310,7 +309,7 @@ const attributes = frameworkAttributes || {
     defaultValue: null,
     reactive: true,
     description: 'Specifies how to align children on the opposite axis.',
-    usedIn: ['Component', 'Element', 'Text', 'Layout', 'RouterView'],
+    usedIn: ['Layout'],
   },
   padding: {
     attrType: 'regular',
@@ -331,7 +330,7 @@ const attributes = frameworkAttributes || {
     defaultValue: null,
     reactive: true,
     description: 'Adds spacing between the content and the edges of the Layout Component.',
-    usedIn: ['Element', 'Text', 'Layout', 'RouterView'],
+    usedIn: ['Layout'],
   },
   '@loaded': {
     attrType: 'event',
