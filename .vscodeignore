@@ -11,3 +11,4 @@ vsc-extension-quickstart.md
 backup
 *.vsix
 *.zip
+.vscode-test/**
