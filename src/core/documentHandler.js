@@ -126,6 +126,7 @@ const getBlitsFileContent = (document) => {
 
 const getAllComponentTemplates = (ast, sourceCode) => {
   const ranges = []
+  const processedRanges = new Set()
 
   traverse(ast, {
     // Handle Blits.Component and Blits.Application calls
@@ -149,12 +150,13 @@ const getAllComponentTemplates = (ast, sourceCode) => {
           if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier' && prop.key.name === 'template') {
             let unwrapped = null
             if (prop.value.type === 'TemplateLiteral') {
-              // Unwrapped content without backticks
               unwrapped = prop.value.quasis[0].value.raw
             } else if (prop.value.type === 'StringLiteral') {
               unwrapped = prop.value.value
             }
             if (unwrapped !== null) {
+              // Add range to Set to track processed ranges
+              processedRanges.add(`${prop.value.start}-${prop.value.end}`)
               ranges.push({
                 start: prop.value.start,
                 end: prop.value.end,
@@ -176,7 +178,9 @@ const getAllComponentTemplates = (ast, sourceCode) => {
           } else if (prop.value.type === 'StringLiteral') {
             unwrapped = prop.value.value
           }
-          if (unwrapped !== null && _isValidTemplateString(unwrapped)) {
+          // Only process if range hasn't been processed and template is valid
+          const rangeKey = `${prop.value.start}-${prop.value.end}`
+          if (unwrapped !== null && !processedRanges.has(rangeKey) && _isValidTemplateString(unwrapped)) {
             ranges.push({
               start: prop.value.start,
               end: prop.value.end,

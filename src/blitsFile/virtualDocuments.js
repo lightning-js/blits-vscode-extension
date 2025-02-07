@@ -51,7 +51,7 @@ function deleteVirtualFilesByUri(uri) {
 }
 
 function getAllVirtualFiles() {
-  return new Map(Array.from(virtualFiles.entries()).map(([key, value]) => [value.fileName, value]))
+  return new Map(Array.from(virtualFiles.entries()).map(([, value]) => [value.fileName, value]))
 }
 
 module.exports = {
