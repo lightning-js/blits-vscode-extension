@@ -20,14 +20,26 @@ const path = require('path')
 const fs = require('fs')
 const documentHandler = require('./documentHandler')
 
-const analyzeComponentsInDocument = async (document, analyzedPaths = new Set()) => {
+const analyzeComponentsInDocument = async (document, analyzedPaths = new Set(), importChain = []) => {
   const sourceCode = document.getText()
   const fileExt = document.uri.fsPath.split('.').pop()
-  return await analyzeComponent(sourceCode, fileExt, document.uri.fsPath, analyzedPaths)
+  return await analyzeComponent(sourceCode, fileExt, document.uri.fsPath, analyzedPaths, importChain)
 }
 
-const analyzeComponent = async (sourceCode, fileExtension = 'js', currentFilePath = '', analyzedPaths = new Set()) => {
+const analyzeComponent = async (
+  sourceCode,
+  fileExtension = 'js',
+  currentFilePath = '',
+  analyzedPaths = new Set(),
+  importChain = []
+) => {
   try {
+    // Check for circular imports by looking for the current file in the import chain
+    if (importChain.includes(currentFilePath)) {
+      console.warn(`Circular import detected: ${importChain.join(' -> ')} -> ${currentFilePath}`)
+      return _getEmptyAnalysis()
+    }
+
     const { content, language } = _getSourceContent(sourceCode, fileExtension)
     const ast = parseAST(content, language)
 
@@ -40,6 +52,9 @@ const analyzeComponent = async (sourceCode, fileExtension = 'js', currentFilePat
 
     analyzedPaths.add(currentFilePath)
 
+    // Add current file to import chain for cycle detection
+    const updatedImportChain = [...importChain, currentFilePath]
+
     const importedComponents = []
     for (const imp of imports) {
       if (imp.path.startsWith('.')) {
@@ -50,7 +65,13 @@ const analyzeComponent = async (sourceCode, fileExtension = 'js', currentFilePat
             const importedCode = fs.readFileSync(resolvedPath, 'utf-8')
             const importFileExt = path.extname(resolvedPath).slice(1)
 
-            const importAnalysis = await analyzeComponent(importedCode, importFileExt, resolvedPath, analyzedPaths)
+            const importAnalysis = await analyzeComponent(
+              importedCode,
+              importFileExt,
+              resolvedPath,
+              analyzedPaths,
+              updatedImportChain
+            )
 
             imp.specifiers.forEach((spec) => {
               importedComponents.push({
