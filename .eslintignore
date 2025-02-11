@@ -1,0 +1,37 @@
+# VSCode
+.vscode/**
+.vscode-test/**
+
+# Build outputs
+out/**
+*.vsix
+*.zip
+
+# Dependencies
+node_modules/**
+
+# Git and CI
+.git/**
+.github/**
+
+# Misc
+.DS_Store
+backup/**
+
+# Config files
+.eslintcache
+.gitignore
+.vscodeignore
+*.map
+jsconfig.json
+.eslintrc.json
+
+# Documentation
+*.md
+vsc-extension-quickstart.md
+
+# workers
+.github/**
+
+# vscode test
+.vscode-test/**

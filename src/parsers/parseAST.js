@@ -17,11 +17,19 @@
 
 const parser = require('@babel/parser')
 
-const parseAST = (code, fileExtension) => {
+// had to place this in order to make type checking work for plugins
+/** @typedef {import('@babel/parser').ParserPlugin} BabelParserPlugin */
+
+/**
+ * @param {string} code
+ * @param {string} fileExtension
+ */
+module.exports = (code, fileExtension) => {
+  /** @type {BabelParserPlugin[]} */
   const pluginList = ['objectRestSpread', 'optionalChaining', 'nullishCoalescingOperator']
 
   if (fileExtension === 'ts' || fileExtension === 'tsx') {
-    pluginList.push('typescript')
+    pluginList.push(['typescript', {}])
   }
 
   try {
@@ -35,5 +43,3 @@ const parseAST = (code, fileExtension) => {
     return null
   }
 }
-
-module.exports = parseAST

@@ -16,90 +16,91 @@
  */
 
 const vscode = require('vscode')
-const traverse = require('@babel/traverse').default
-const fs = require('fs-extra')
-const parser = require('@babel/parser')
-const path = require('path')
+const { getAttributesForComponent, getCompletionDetails } = require('../core/framework/attributes')
 
-const elementProps = []
-let elementPropsParsed = false
+const createCompletionItem = (tagName, name, isReactive = false) => {
+  const nameWithPrefix = isReactive ? `:${name}` : name
+  const item = new vscode.CompletionItem(nameWithPrefix, vscode.CompletionItemKind.Property)
 
-const parseProps = async () => {
-  // get element/renderer props from Blits codebase
-  const projectRootPath = vscode.workspace.workspaceFolders[0].uri.fsPath
-  const blitsElementJsPath = path.join(projectRootPath, 'node_modules/@lightningjs/blits/src/engines/L3/element.js')
-  let code = ''
-  try {
-    const fileExists = await fs.pathExists(blitsElementJsPath)
-    if (!fileExists) {
-      console.error(
-        `Blits - element.js not found at ${blitsElementJsPath}. Please make sure you have the @lightningjs/blits package installed.`
-      )
-      return false
+  const details = getCompletionDetails(name)
+  if (details) {
+    const doc = new vscode.MarkdownString()
+    doc.isTrusted = true // Enable trusted rendering
+
+    doc.appendMarkdown('```ts\n')
+    doc.appendMarkdown(`${name}: `)
+
+    // Format types, handle enums and other complex types
+    const typeStr = details.types
+      .map((type) => {
+        if (type === 'enum' && details.values) {
+          // Display enum values as the type
+          return details.values.map((value) => `'${value}'`).join(' | ')
+        }
+        if (typeof type === 'string') {
+          return type // Simple type
+        }
+        if (type.type === 'object' && type.properties) {
+          const props = Object.keys(type.properties)
+            .map((key) => `  ${key}: ${type.properties[key].type}`) // Format object properties
+            .join(',\n')
+          return `{\n${props}\n}` // Return as an indented block
+        }
+        return type.type || 'object' // Fallback for unknown types
+      })
+      .join(' | ')
+
+    doc.appendMarkdown(typeStr)
+
+    if (details.defaultValue !== null && details.defaultValue !== undefined) {
+      doc.appendMarkdown(` = ${JSON.stringify(details.defaultValue)}`)
     }
-    code = await fs.readFile(blitsElementJsPath, 'utf8')
-  } catch (error) {
-    console.error(`Error resolving real path for ${blitsElementJsPath}:`, error)
-    return false
+
+    doc.appendMarkdown('\n```\n')
+
+    if (details.description) {
+      doc.appendMarkdown(`\n${details.description}\n`)
+    }
+
+    item.documentation = doc
+
+    // Add item details
+    let reactiveSuffix = ''
+    if (isReactive) {
+      reactiveSuffix = '(Reactive)'
+    }
+    item.detail = `${tagName} | ${nameWithPrefix} ${reactiveSuffix}`
+
+    // Add snippet for inserting
+    let defaultValue = details.defaultValue !== null && details.defaultValue !== undefined ? details.defaultValue : ''
+    if (name.startsWith('@')) {
+      name = name.substring(1)
+      defaultValue = '\\$methodName'
+    }
+    item.insertText = new vscode.SnippetString(`${name}="${defaultValue}$0"`)
   }
 
-  // Parse the code to an AST
-  const ast = parser.parse(code, {
-    sourceType: 'module',
-    plugins: ['classProperties'], // Enable additional syntax features
-  })
+  item.sortText = `${isReactive ? '1' : '0'}-${name}`
+  return item
+}
 
-  // Traverse the AST to find the 'propsTransformer' object
-  traverse(ast, {
-    VariableDeclarator({ node }) {
-      // Check if the variable declarator is for 'propsTransformer'
-      if (node.id.name === 'propsTransformer' && node.init.type === 'ObjectExpression') {
-        // Traverse properties of the 'propsTransformer' object
-        node.init.properties.forEach((property) => {
-          if (property.type === 'ObjectMethod' && property.kind === 'set' && property.key.type === 'Identifier') {
-            // Extract the name of the setter method
-            elementProps.push(property.key.name)
-          }
-        })
+const suggest = async (tagName, existingAttributes = [], onlyEventProps = false, onlyReactiveProps = false) => {
+  const attributes = getAttributesForComponent(tagName, onlyEventProps, onlyReactiveProps)
+  const items = []
+
+  Object.keys(attributes).forEach((attrName) => {
+    if (!existingAttributes.includes(attrName)) {
+      if (onlyReactiveProps) {
+        items.push(createCompletionItem(tagName, attrName, true))
+      } else {
+        items.push(createCompletionItem(tagName, attrName, false))
       }
-    },
-  })
-
-  if (elementProps.length > 0) {
-    elementPropsParsed = true
-  }
-
-  console.log(`Got following prop names from Blits : ${elementProps}`)
-
-  return true
-}
-
-const suggest = async (attributes) => {
-  // before suggesting items check if renderer props has been parsed
-  // parsing occurs on activation but if it failed we also need to check here
-  // just in case if blits package has been installed after activation
-  if (!elementPropsParsed) {
-    await parseProps()
-  }
-
-  let completionItems = []
-  elementProps.forEach((prop) => {
-    if (!attributes.includes(prop)) {
-      const completionItem = new vscode.CompletionItem(prop, vscode.CompletionItemKind.Property)
-      completionItem.insertText = new vscode.SnippetString(`${prop}="$0"`)
-      completionItems.push(completionItem)
     }
   })
 
-  return completionItems
-}
-
-const isReady = () => {
-  return elementPropsParsed
+  return items
 }
 
 module.exports = {
   suggest,
-  parseProps,
-  isReady,
 }

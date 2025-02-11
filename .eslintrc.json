@@ -72,6 +72,15 @@
           "never"
         ]
       }
+    },
+    {
+      "files": [
+        "test/**/*.js"
+      ],
+      "rules": {
+        "no-unused-expressions": "off",
+        "no-undef": "off"
+      }
     }
   ]
 }

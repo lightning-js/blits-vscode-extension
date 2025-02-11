@@ -14,10 +14,38 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 const vscode = require('vscode')
-const parse = require('../parsers')
-const templateHelper = require('../helpers/template')
 const prettier = require('prettier')
+const documentHandler = require('../core/documentHandler')
+const workspaceHandler = require('../core/workspaceHandler')
+
+const diagnosticCollection = vscode.languages.createDiagnosticCollection('blits-template')
+
+function clearDiagnostics(document) {
+  diagnosticCollection.delete(document.uri)
+}
+
+function createTemplateDiagnostic(document, start, end, error) {
+  const range = new vscode.Range(document.positionAt(start), document.positionAt(end))
+
+  const matches = error.message.match(/(.*?)\n((?:.*\n)*)/)
+  const errorDescription = matches
+    ? matches[1].split('For more info')[0].replace(/\s*\(\d+:\d+\)\s*$/, '')
+    : error.message
+  const locationDisplay = matches ? matches[2] : ''
+  const cleanMessage = errorDescription + '\n' + locationDisplay
+
+  console.error(`Auto formatting error: ${cleanMessage}`)
+
+  const diagnostic = new vscode.Diagnostic(
+    range,
+    'Template auto-formatting has failed due to template errors. Please fix the template and try again.',
+    vscode.DiagnosticSeverity.Error
+  )
+
+  return diagnostic
+}
 
 const CONFIG_KEYS = [
   'printWidth',
@@ -51,10 +79,7 @@ function formatTemplate(template, parser, extraIndentation = '') {
     template = template.replace(regex, '')
   }
 
-  // preserve user-defined trailing whitespace
   const trailingWhiteSpace = getTrailingWhiteSpace(template)
-
-  // process multiline comments
   template = modifyComments(template)
   let formattedTemplate = prettier.format(template, { parser, ...config })
 
@@ -62,16 +87,10 @@ function formatTemplate(template, parser, extraIndentation = '') {
     formattedTemplate = formattedTemplate.replace(/^/gm, extraIndentation)
   }
 
-  // clean any auto generated trailing white space (respect user's choice here)
   formattedTemplate = formattedTemplate.trimEnd()
   formattedTemplate += trailingWhiteSpace
 
   return formattedTemplate
-}
-
-function formatScript(script, parser) {
-  const config = getAutoFormatConfig()
-  return '\n\n' + prettier.format(script, { parser, ...config })
 }
 
 function modifyComments(str) {
@@ -80,12 +99,10 @@ function modifyComments(str) {
   return str.replace(regex, (match) => {
     const lines = match.split('\n')
 
-    // If it's a single-line comment, return it unchanged
     if (lines.length === 1) {
       return match
     }
 
-    // Process multi-line comments
     const modifiedLines = lines.map((line, index) => {
       if (index === 0) {
         return line
@@ -98,54 +115,6 @@ function modifyComments(str) {
   })
 }
 
-function createEdit(document, start, end, newText) {
-  const startPosition = document.positionAt(start)
-  const endPosition = document.positionAt(end)
-  return new vscode.TextEdit(new vscode.Range(startPosition, endPosition), newText)
-}
-
-function formatJS(document, currentDoc, fileExtension) {
-  const currentDocAst = parse.AST(currentDoc, fileExtension)
-  const templates = templateHelper.getTemplateText(currentDocAst, currentDoc)
-
-  return templates.map(({ start, end, template }) => {
-    const stringChar = template.slice(-1)
-    const templateText = template.slice(1, -1)
-    const formattedTemplate = formatTemplate(templateText, 'angular', ' '.repeat(4))
-    const newText = `${stringChar}\n${formattedTemplate}${stringChar}`
-    return createEdit(document, start, end, newText)
-  })
-}
-
-const formatBlits = (document, currentDoc) => {
-  const blitsFileObject = templateHelper.getBlitsFileWithoutLicense(currentDoc)
-
-  const edits = []
-
-  if (blitsFileObject.template) {
-    const { start, end, content } = blitsFileObject.template
-    try {
-      const formattedTemplate = formatTemplate(content, 'angular')
-      edits.push(createEdit(document, start, end, formattedTemplate))
-    } catch (err) {
-      console.log('Blits: error formatting template', err)
-    }
-  }
-
-  if (blitsFileObject.script) {
-    const { start, end, content, lang } = blitsFileObject.script
-    try {
-      const formattedScript = formatScript(content, lang === 'ts' ? 'typescript' : 'babel') //js uses babel parser
-      edits.push(createEdit(document, start, end, formattedScript))
-    } catch (err) {
-      console.log('Blits: error formatting script', err)
-    }
-  }
-
-  return edits
-}
-
-// keeps the user's trailing whitespace choice
 function getTrailingWhiteSpace(text) {
   const trailingWhitespaceMatch = text.match(/(\s*)$/)
 
@@ -163,17 +132,75 @@ function getTrailingWhiteSpace(text) {
   }
 }
 
-module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
-  const autoFormatEnabled = vscode.workspace.getConfiguration('blits').get('autoFormat')
+function createEdit(document, start, end, newText) {
+  const startPosition = document.positionAt(start)
+  const endPosition = document.positionAt(end)
+  return new vscode.TextEdit(new vscode.Range(startPosition, endPosition), newText)
+}
 
+function formatDocument(document) {
+  const edits = []
+  const templates = documentHandler.getAllTemplates(document)
+  const diagnostics = []
+
+  // Clear existing diagnostics
+  clearDiagnostics(document)
+
+  templates.forEach(({ start, end, content, type }) => {
+    try {
+      const stringChar = type === 'template-literal' ? content.slice(-1) : ''
+      const templateText = type === 'template-literal' ? content.slice(1, -1) : content
+      const indentation = type === 'template-literal' ? ' '.repeat(4) : ''
+
+      const formattedTemplate = formatTemplate(templateText, 'angular', indentation)
+
+      const newText =
+        type === 'template-literal'
+          ? stringChar === '`'
+            ? `${stringChar}\n${formattedTemplate}${stringChar}`
+            : `${stringChar}${formattedTemplate.replace(/^\s*/, '')}${stringChar}`
+          : formattedTemplate
+
+      edits.push(createEdit(document, start, end, newText))
+    } catch (err) {
+      diagnostics.push(createTemplateDiagnostic(document, start, end, err))
+    }
+  })
+
+  if (diagnostics.length > 0) {
+    diagnosticCollection.set(document.uri, diagnostics)
+  }
+
+  if (documentHandler.isBlitsFile(document)) {
+    const text = document.getText()
+    const script = documentHandler.getBlitsScript(text)
+    if (script) {
+      try {
+        const { start, end, content, language } = script
+        const formattedScript =
+          '\n\n' +
+          prettier.format(content, {
+            parser: language === 'ts' ? 'typescript' : 'babel',
+            ...getAutoFormatConfig(),
+          })
+        edits.push(createEdit(document, start, end, formattedScript))
+      } catch (err) {
+        console.error('Error formatting script section:', err)
+      }
+    }
+  }
+
+  return edits
+}
+
+module.exports = vscode.workspace.onWillSaveTextDocument((event) => {
+  if (!workspaceHandler.isBlitsApp()) return
+
+  const autoFormatEnabled = vscode.workspace.getConfiguration('blits').get('autoFormat')
   if (!autoFormatEnabled) return
 
   const document = event.document
-  const currentDoc = document.getText()
-  const fileExtension = document.uri.fsPath.split('.').pop()
-
-  const formatFunction = fileExtension === 'blits' ? formatBlits : formatJS
-  const edits = formatFunction(document, currentDoc, fileExtension)
+  const edits = formatDocument(document)
 
   if (edits.length > 0) {
     event.waitUntil(Promise.resolve(edits))

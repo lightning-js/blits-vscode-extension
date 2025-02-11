@@ -15,13 +15,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// const fileManager = require('./fileManager')
-const completionProviders = require('./completionProviders')
-const commands = require('./commands')
-const formatters = require('./formatters')
-const completionItems = require('./completionItems')
-const errorChecking = require('./errorChecking')
 const vscode = require('vscode')
+const workspaceHandler = require('./core/workspaceHandler')
+const templateCompletionProvider = require('./completionProviders/template')
+const commentCommand = require('./commands/commentCommand')
+const templateFormatterOnSave = require('./formatters/templateFormatterOnSave')
+const checkForLoopIndexAsKey = require('./errorChecking/checkForLoopIndexAsKey')
 const { registerDiagnostics } = require('./blitsFile/diagnostics')
 const { registerHoverProvider } = require('./blitsFile/hoverProvider')
 const { registerCompletionProvider } = require('./blitsFile/completionProvider')
@@ -32,6 +31,9 @@ const packageJSON = require('../package.json')
 
 async function activate(context) {
   console.log('Lightning Blits is being activated.')
+
+  // init blits dependency check
+  workspaceHandler.init()
 
   try {
     // Blits file type features
@@ -53,30 +55,15 @@ async function activate(context) {
     registerHoverProvider(context)
     registerCompletionProvider(context)
     registerSignatureHelpProvider(context)
-    // registerCodeActionsProvider(context)
+    // registerCodeActionsProvider(context) // not working yet
 
     // Other features
-
-    // get element/renderer props from Blits codebase
-    console.log('Parsing element props from Blits codebase')
-    const isElementPropsReady = await completionItems.elementProps.parseProps()
-
-    if (!isElementPropsReady) {
-      // add completion provider for template section
-      context.subscriptions.push(completionProviders.templateAttributes)
-    }
-
-    context.subscriptions.push(completionProviders.templateTags)
-
-    // comment command wrapper for template section
-    context.subscriptions.push(commands.commentCommand)
-
-    // format template section on save
-    context.subscriptions.push(formatters.templateFormatterOnSave)
-
-    // create diagnostic collection for error checking
+    context.subscriptions.push(templateCompletionProvider)
+    context.subscriptions.push(commentCommand)
+    context.subscriptions.push(templateFormatterOnSave)
     const diagnosticsCollection = vscode.languages.createDiagnosticCollection('blits-template')
-    errorChecking.checkForLoopIndexAsKey(context, diagnosticsCollection)
+    context.subscriptions.push(diagnosticsCollection)
+    checkForLoopIndexAsKey(context, diagnosticsCollection)
 
     // extension activated
     vscode.window.showInformationMessage(`Lightning Blits v${packageJSON.version} has been activated!`)
@@ -89,6 +76,7 @@ async function activate(context) {
 
 function deactivate() {
   console.log('Lightning Blits is being deactivated.')
+  workspaceHandler.dispose()
 }
 
 module.exports = {

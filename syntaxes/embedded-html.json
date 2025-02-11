@@ -6,12 +6,110 @@
   "injectionSelector": "L:source.js -comment -string, L:source.ts -comment -string",
   "patterns": [
     {
+      "begin": "(template\\s*:\\s*(\\/\\*.*?\\*\\/)?\\s*[`'])((?!\\s*(?:<(?:[A-Za-z][A-Za-z0-9:._-]*\\s+|[A-Za-z][A-Za-z0-9:._-]*>|!--))[^`']*)[`'])",
+      "beginCaptures": {
+        "1": {
+          "name": "variable.other.js"
+        }
+      },
+      "patterns": [],
+      "end": "(?!.)"
+    },
+    {
       "begin": "template\\s*:\\s*(\\/\\*.*?\\*\\/)?\\s*[`']",
       "end": "[`']",
       "patterns": [
         {
-          "match": "(<\\/?)(Applet|Acronym|Basefont|BaseFont|Bgsound|BgSound|Big|Blink|Center|Dir|Embed|Font|Frameset|Isindex|IsIndex|Ilayer|Keygen|Listing|Layer|Menuitem|MenuItem|Menu|Multicol|Nobr|Noembed|NoEmbed|Noframes|NoFrames|Plaintext|PlainText|Param|S|Strike|Spacer|Tt|U|Xmp|Frame|Marquee)(\\s+|\\s*?>)",
-          "name": "meta.tag.other.unrecognized.html.derivative",
+          "name": "comment.block.html",
+          "begin": "<!--",
+          "end": "-->",
+          "captures": {
+            "0": { "name": "punctuation.definition.comment.html" }
+          }
+        },
+        {
+          "name": "meta.tag.any.blits",
+          "begin": "(<)([a-zA-Z][a-zA-Z0-9-]*)",
+          "beginCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.begin.html"
+            },
+            "2": {
+              "name": "entity.name.tag.html"
+            }
+          },
+          "end": "(/?>)",
+          "endCaptures": {
+            "1": {
+              "name": "punctuation.definition.tag.end.html"
+            }
+          },
+          "patterns": [
+            {
+              "name": "meta.attribute.handler.blits",
+              "match": "\\B(@(?:loaded|error))\\s*=\\s*\"([$][a-zA-Z_][a-zA-Z0-9_.-]*)\"",
+              "captures": {
+                "1": { "name": "keyword.control" },
+                "2": { "name": "support.function" }
+              }
+            },
+            {
+              "name": "invalid.illegal.handler-value",
+              "match": "\\B@(?:loaded|error)\\s*=\\s*\"(?!\\$)[^\"]*\"",
+              "captures": {
+                "0": { "name": "invalid.illegal.attribute.value.blits" }
+              }
+            },
+            {
+              "name": "invalid.illegal.attribute.blits",
+              "match": "\\B(@(?!loaded|error)[a-zA-Z-]+)\\s*=\\s*(\"[^\"]*\")",
+              "captures": {
+                "1": { "name": "invalid.illegal.attribute.name.blits" },
+                "2": { "name": "invalid.illegal.attribute.value.blits" }
+              }
+            },
+            {
+              "begin": "((?!:)[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)\\s*=\\s*(\")",
+              "beginCaptures": {
+                "1": {
+                  "name": "entity.other.attribute-name.html"
+                },
+                "2": {
+                  "name": "string.quoted.double"
+                }
+              },
+              "end": "(\")(?=\\s|>|[`'])",
+              "endCaptures": {
+                "0": {
+                  "name": "string.quoted.double"
+                }
+              },
+              "contentName": "string.quoted.double"
+            },
+            {
+              "begin": "(:[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*(?:\\.[A-Za-z][A-Za-z0-9]*)?)\\s*=\\s*\"",
+              "beginCaptures": {
+                "1": {
+                  "name": "variable.language"
+                }
+              },
+              "end": "\"(?=\\s|>)",
+              "contentName": "string.quoted.double",
+              "patterns": [
+                {
+                  "match": "\\$[A-Za-z0-9:.-_@]+",
+                  "name": "variable.parameter"
+                },
+                {
+                  "include": "source.js"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "meta.tag.any.blits",
+          "match": "(</)([a-zA-Z][a-zA-Z0-9-]*)(>)",
           "captures": {
             "1": {
               "name": "punctuation.definition.tag.begin.html"
@@ -23,62 +121,8 @@
               "name": "punctuation.definition.tag.end.html"
             }
           }
-        },
-        {
-          "begin": "((?!:)[A-Za-z0-9:.-_@]+)\\s*=\\s*(\")",
-          "beginCaptures": {
-            "1": {
-              "name": "entity.other.attribute-name.html"
-            },
-            "2": {
-              "name": "string.quoted.double"
-            }
-          },
-          "end": "(\")(?=\\s|>)",
-          "endCaptures": {
-            "0": {
-              "name": "string.quoted.double"
-            }
-          },
-          "contentName": "string.quoted.double"
-        },
-        {
-          "include": "text.html.derivative"
-        },
-        {
-          "match": ":",
-          "name": "punctuation.special.colon"
         }
       ]
-    },
-    {
-      "begin": "(:[A-Za-z0-9:.-_@]+)\\s*=\\s*\"",
-      "beginCaptures": {
-        "1": {
-          "name": "variable.language"
-        }
-      },
-      "end": "\"(?=\\s|>)",
-      "contentName": "string.quoted.double",
-      "patterns": [
-        {
-          "match": "\\$[A-Za-z0-9:.-_@]+",
-          "name": "variable.parameter"
-        },
-        {
-          "include": "source.js"
-        }
-      ]
-    },
-    {
-      "begin": "\\s+(align|alink|background|bgcolor|border|clear|height|hspace|language|link|nowrap|start|text|type|vlink|vspace|width)\\s*=\\s*\"",
-      "beginCaptures": {
-        "1": {
-          "name": "entity.other.attribute-name.html"
-        }
-      },
-      "end": "\"(?=\\s|>)",
-      "contentName": "string.quoted.double"
     }
   ],
   "scopeName": "inline.custom-blits-html"

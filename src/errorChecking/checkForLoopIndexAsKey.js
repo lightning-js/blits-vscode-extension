@@ -16,14 +16,18 @@
  */
 
 const vscode = require('vscode')
-const templateHelper = require('../helpers/template')
-const parse = require('../parsers')
 const path = require('path')
+const documentHandler = require('../core/documentHandler')
+const workspaceHandler = require('../core/workspaceHandler')
 
 // Allowed file extensions
 const ALLOWED_EXTENSIONS = ['.js', '.ts', '.blits']
 
 function shouldProcessFile(document) {
+  if (!workspaceHandler.isBlitsApp()) {
+    return false
+  }
+
   let fileName = document.fileName
   if (fileName.endsWith('.git')) {
     fileName = fileName.slice(0, -4)
@@ -43,10 +47,7 @@ module.exports = (context, diagnosticsCollection) => {
       // Clear previous diagnostics for this document
       diagnosticsCollection.clear()
 
-      const currentDoc = document.getText()
-      const isBlits = document.languageId === 'blits'
-
-      const diagnostics = analyzeForLoopKeyAttribute(document, currentDoc, isBlits)
+      const diagnostics = analyzeForLoopKeyAttribute(document)
       diagnosticsCollection.set(document.uri, diagnostics)
       context.subscriptions.push(diagnosticsCollection)
     }
@@ -56,20 +57,10 @@ module.exports = (context, diagnosticsCollection) => {
   vscode.workspace.onDidOpenTextDocument(checkForLoopIndexAsKey)
 }
 
-function analyzeForLoopKeyAttribute(document, currentDoc, isBlits) {
+function analyzeForLoopKeyAttribute(document) {
   const diagnostics = []
 
-  let templateSections = []
-  if (isBlits) {
-    const template = templateHelper.getTemplateTextForBlits(document, currentDoc)
-    if (template) {
-      templateSections.push(template)
-    }
-  } else {
-    console.log(`for loop: parsing AST : ${document.uri.fsPath}`)
-    const ast = parse.AST(currentDoc, document.uri.fsPath.split('.').pop())
-    templateSections = templateHelper.getTemplateText(ast, currentDoc) || []
-  }
+  let templateSections = documentHandler.getAllTemplates(document)
 
   templateSections.forEach((section) => {
     const forLoops = findForLoops(section, document)
@@ -117,7 +108,7 @@ function findForLoops(templateInfo, document) {
   const forLoopRegex = /<(\w+)\s+[^>]*:for\s*=\s*["']([^"']+)["'][^>]*>/g
   const attributeRegex = /(\S+)\s*=\s*["']([^"']*)["']/g
 
-  const templateText = templateInfo.template
+  const templateText = templateInfo.content
   const baseOffset = templateInfo.start
 
   let match

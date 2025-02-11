@@ -16,69 +16,66 @@
  */
 
 const vscode = require('vscode')
-const path = require('path')
-const fs = require('fs-extra')
-const parse = require('../parsers')
-const templateHelper = require('../helpers/template')
+const componentHandler = require('../core/componentHandler')
 const elementProps = require('./elementProps')
 
-const createCompletionItems = (props, attributes) => {
+const createCompletionItems = (props, existingAttributes, tag) => {
   return props.flatMap((prop) => {
-    if (attributes.includes(prop.key)) return []
+    if (existingAttributes.includes(prop.key)) return []
 
     const createItem = (prefix = '') => {
       const item = new vscode.CompletionItem(`${prefix}${prop.key}`, vscode.CompletionItemKind.Property)
       item.insertText = new vscode.SnippetString(`${prop.key}="${prop.default || ''}$0"`)
       item.sortText = `0${prefix}${prop.key}`
+      let reactiveSuffix = ''
+      if (prefix === ':') {
+        reactiveSuffix = '(Reactive)'
+      }
+      item.detail = `${tag} | ${prop.key} ${reactiveSuffix}`
+
+      const doc = new vscode.MarkdownString()
+      doc.isTrusted = true // Enable trusted rendering
+
+      // Properly display attribute, type, and default value
+      doc.appendMarkdown(
+        `\`\`\`ts\n${prop.key}: ${prop.cast.toLowerCase()}${
+          prop.default !== undefined ? ` = ${prop.default}` : ''
+        }\n\`\`\``
+      )
+
+      // Component context
+      doc.appendMarkdown(`\nDefined in component: \`${tag}\`.`)
+      item.documentation = doc
+
       return item
     }
 
-    return [createItem(), createItem(':')]
+    return [createItem()]
   })
 }
 
-const parseComponent = (attributes, componentFileContent, fileExtension) => {
-  let ast, props
-
-  if (fileExtension === 'blits') {
-    const { content, language } = templateHelper.getScriptContentForBlits(componentFileContent)
-    ast = parse.AST(content, language)
-  } else {
-    ast = parse.AST(componentFileContent)
-  }
-
-  props = parse.componentProps(ast)
-  const completionItems = createCompletionItems(props, attributes)
-
-  return completionItems
-}
-
-const suggest = async (tag, attributes, doc, docAst) => {
+const suggest = async (tag, existingAttributes, document) => {
   let completionItems = []
 
-  const currentFilePath = doc.uri.fsPath
-  const dir = path.dirname(currentFilePath)
+  const elementCompletionItems = await elementProps.suggest('Element', existingAttributes)
+  const componentData = await componentHandler.analyzeComponentsInDocument(document)
+  const component = componentData.importedComponents.find((comp) => comp.name === tag)
 
-  const componentFile = templateHelper.findComponentFileByName(docAst, tag)
-
-  if (componentFile && componentFile.length > 0) {
-    try {
-      const componentFilePath = path.join(dir, componentFile)
-      const fileExtension = componentFile.split('.').pop()
-      const componentFileContent = await fs.readFile(componentFilePath, 'utf-8')
-
-      if (componentFileContent) {
-        completionItems = parseComponent(attributes, componentFileContent, fileExtension)
-      }
-    } catch (err) {
-      console.error('Error parsing component:', err)
-      return []
-    }
+  let componentCompletionItems = []
+  if (component) {
+    componentCompletionItems = createCompletionItems(component.props, existingAttributes, tag)
+    completionItems.push(...componentCompletionItems)
   }
 
-  // always merge with core props
-  const elementCompletionItems = await elementProps.suggest(attributes)
-  completionItems = completionItems.concat(elementCompletionItems)
+  const componentAttributesSet = new Set(componentCompletionItems.map((item) => item.label))
+
+  // Filter out element props that conflict with component attributes
+  const filteredElementCompletionItems = elementCompletionItems.filter(
+    (item) => !componentAttributesSet.has(item.label)
+  )
+
+  // Merge component and filtered element suggestions
+  completionItems.push(...filteredElementCompletionItems)
 
   return completionItems
 }

@@ -16,79 +16,60 @@
  */
 
 const vscode = require('vscode')
-const templateHelper = require('../helpers/template')
-const parse = require('../parsers')
+const templateHandler = require('../core/templateHandler')
+const workspaceHandler = require('../core/workspaceHandler')
 
 module.exports = vscode.commands.registerCommand('blits-vscode.commentCommand', async () => {
+  // check if the workspace is a Blits workspace
+  if (!workspaceHandler.isBlitsApp()) {
+    await vscode.commands.executeCommand('editor.action.commentLine')
+    return
+  }
+
   const editor = vscode.window.activeTextEditor
 
   if (editor) {
     const document = editor.document
     const selection = editor.selection
-    const isBlits = document.languageId === 'blits'
+    const position = selection.active
 
-    const currentDoc = document.getText()
-    const cursorPosition = selection.active
-
-    let isCursorInsideTemplate = false
-    if (isBlits) {
-      isCursorInsideTemplate = templateHelper.isCursorInsideTemplateForBlits(document, currentDoc, cursorPosition)
-    } else {
-      const currentDocAst = parse.AST(
-        currentDoc,
-        document.languageId === 'typescript' || document.languageId === 'tsx' ? 'ts' : 'js'
-      )
-      isCursorInsideTemplate = templateHelper.isCursorInsideTemplate(document, currentDocAst, cursorPosition)
-    }
-
-    if (isCursorInsideTemplate) {
-      await editor.edit((editBuilder) => {
-        let startLine, endLine
-
-        if (selection.isEmpty) {
-          // If no text is selected, get the entire line where the cursor is
-          startLine = endLine = selection.start.line
-        } else {
-          // Get the entire lines that the selection spans
-          startLine = selection.start.line
-          endLine = selection.end.line
-        }
-
-        for (let i = startLine; i <= endLine; i++) {
-          const line = document.lineAt(i)
-          let lineText = line.text
-          // Skip the line if it's empty or contains only whitespace
-          if (/^\s*$/.test(lineText)) {
-            continue
-          }
-          let selectionRange = line.range
-          const leadingWhitespaceMatch = line.text.match(/^\s*/)
-          const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : ''
-
-          if (isLineCommented(lineText)) {
-            // Uncomment the line by removing <!-- and -->
-            lineText = lineText.replace(/^(\s*)<!--\s?/, '$1').replace(/\s?-->\s*$/, '')
-          } else {
-            // Comment the line by adding <!-- and -->
-            lineText = `${leadingWhitespace}<!-- ${lineText.trim()} -->`
-          }
-
-          // Replace the line in the editor
-          editBuilder.replace(selectionRange, lineText)
-        }
-      })
-    } else {
-      // Otherwise, execute the built-in comment command
+    if (!templateHandler.isCursorInTemplate(document, position)) {
       await vscode.commands.executeCommand('editor.action.commentLine')
+      return
     }
+
+    await editor.edit((editBuilder) => {
+      let startLine, endLine
+
+      if (selection.isEmpty) {
+        startLine = endLine = selection.start.line
+      } else {
+        startLine = selection.start.line
+        endLine = selection.end.line
+      }
+
+      for (let i = startLine; i <= endLine; i++) {
+        const line = document.lineAt(i)
+        let lineText = line.text
+        if (/^\s*$/.test(lineText)) {
+          continue
+        }
+        let selectionRange = line.range
+        const leadingWhitespaceMatch = line.text.match(/^\s*/)
+        const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : ''
+
+        if (isLineCommented(lineText)) {
+          lineText = lineText.replace(/^(\s*)<!--\s?/, '$1').replace(/\s?-->\s*$/, '')
+        } else {
+          lineText = `${leadingWhitespace}<!-- ${lineText.trim()} -->`
+        }
+
+        editBuilder.replace(selectionRange, lineText)
+      }
+    })
   }
 })
 
 const isLineCommented = (lineText) => {
-  // Matches lines that start with <!-- and end with -->
   return /^\s*<!--(?:\s*<!--)*\s*.*\s*(?:-->\s*)*-->$/g.test(lineText)
 }
-
-// const isLineTemplateStart = (lineText) => {
-//   return /^\s*template\s*:\s*(\/\*.*?\*\/)?\s*[`'"]/g.test(lineText)
-// }
