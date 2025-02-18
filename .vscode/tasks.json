@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "set-dev-main",
+      "type": "npm",
+      "script": "set-dev",
+      "presentation": {
+        "reveal": "never"
+      }
+    },
+    {
+      "label": "set-prod-main",
+      "type": "npm",
+      "script": "set-prod",
+      "presentation": {
+        "reveal": "never"
+      }
+    }
+  ]
+}

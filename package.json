@@ -30,12 +30,14 @@
     "onLanguage:javascript",
     "onLanguage:typescript"
   ],
-  "main": "./src/extension.js",
+  "main": "./out/main.js",
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "set-dev": "node scripts/update-main.js dev",
+    "set-prod": "node scripts/update-main.js prod",
+    "vscode:prepublish": "npm run set-prod && npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
