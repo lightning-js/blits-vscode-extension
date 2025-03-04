@@ -9,11 +9,10 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
-      "preLaunchTask": "set-dev-main",
-      "postDebugTask": "set-prod-main"
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "preLaunchTask": "esbuild: watch",
+      "outFiles": ["${workspaceFolder}/out/**/*.js"]
     },
     {
       "name": "Extension Tests",
@@ -22,9 +21,13 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensionTestsPath=${workspaceFolder}/test/suite/index"
-      ],
-      "preLaunchTask": "set-dev-main",
-      "postDebugTask": "set-prod-main"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug test-template-errors",
+      "program": "${workspaceFolder}/test-template-errors.js"
     }
 	]
 }

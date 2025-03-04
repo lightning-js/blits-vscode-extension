@@ -2,20 +2,11 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "set-dev-main",
-      "type": "npm",
-      "script": "set-dev",
-      "presentation": {
-        "reveal": "never"
-      }
-    },
-    {
-      "label": "set-prod-main",
-      "type": "npm",
-      "script": "set-prod",
-      "presentation": {
-        "reveal": "never"
-      }
+      "label": "esbuild: watch",
+      "type": "shell",
+      "command": "npx esbuild ./src/extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+      "isBackground": true,
+      "problemMatcher": []
     }
   ]
 }
