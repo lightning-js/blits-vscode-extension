@@ -1,0 +1,116 @@
+{
+  "Basic Blits Component": {
+    "prefix": "blits-component",
+    "body": [
+      "import Blits from '@lightningjs/blits'",
+      "",
+      "export default Blits.Component('${1:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}', {",
+      "  template: `",
+      "    ${2:<Element> </Element>}",
+      "  `,",
+      "  state() {",
+      "    return {",
+      "      // state variables",
+      "    }",
+      "  },",
+      "  hooks: {",
+      "    ready() {",
+      "      // Component is ready for interaction",
+      "    },",
+      "  },",
+      "})",
+      ""
+    ],
+    "description": "Create a basic Blits component"
+  },
+  "Blits Input Handler": {
+    "prefix": "blits-input",
+    "body": [
+      "input: {",
+      "  ${1|left,right,up,down,enter,back,space,any|}(${2:e}) {",
+      "    $0",
+      "  },",
+      "  ${3|left,right,up,down,enter,back,space,any|}(${4:e}) {",
+      "    // Handle input",
+      "  }${5:,}",
+      "}"
+    ],
+    "description": "Add input handlers to Blits component"
+  },
+  "Blits Full Input Object": {
+    "prefix": "blits-input-block",
+    "body": [
+      "input: {",
+      "  up(e) {",
+      "    $1",
+      "  },",
+      "  down(e) {",
+      "    $2",
+      "  },",
+      "  left(e) {",
+      "    $3",
+      "  },",
+      "  right(e) {",
+      "    $4",
+      "  },",
+      "  enter(e) {",
+      "    $5",
+      "  },",
+      "  back(e) {",
+      "    $7",
+      "  },",
+      "  any(e) {",
+      "    // Handle any key press",
+      "    $0",
+      "  }",
+      "}"
+    ],
+    "description": "Add a complete input object with common key handlers"
+  },
+  "Blits Lifecycle Hooks": {
+    "prefix": "blits-hooks",
+    "body": [
+      "hooks: {",
+      "  ${1|init,ready,focus,unfocus,destroy|}() {",
+      "    $0",
+      "  }${2:,}",
+      "}"
+    ],
+    "description": "Add a lifecycle hook to Blits component"
+  },
+  "Blits Full Lifecycle Hooks": {
+    "prefix": "blits-hooks-block",
+    "body": [
+      "hooks: {",
+      "  init() {",
+      "    // Component is being instantiated, child elements not available yet",
+      "    $1",
+      "  },",
+      "  ready() {",
+      "    // Component is fully initialized and rendered",
+      "    $2",
+      "  },",
+      "  focus() {",
+      "    // Component received focus",
+      "    $3",
+      "  },",
+      "  unfocus() {",
+      "    // Component lost focus",
+      "    $4",
+      "  },",
+      "  destroy() {",
+      "    // Component is being destroyed and removed",
+      "    $5",
+      "  }$0",
+      "}"
+    ],
+    "description": "Add all major lifecycle hooks to Blits component"
+  },
+  "Blits Attribute Transition": {
+    "prefix": "blits-attribute-transition",
+    "body": [
+      ":${1|x,y,alpha,rotation,scale,color,w,h|}.transition=\"{value: \\$${2:value}, duration: ${3:300}, easing: '${4|ease-in,ease-out,ease-in-out,ease-in-sine,ease-out-sine,ease-in-out-sine,ease-in-cubic,ease-out-cubic,ease-in-out-cubic,ease-in-circ,ease-out-circ,ease-in-out-circ,ease-in-back,ease-out-back,ease-in-out-back|}', delay: ${5:0}}\""
+    ],
+    "description": "Add a transition to an attribute in Blits template"
+  }
+}

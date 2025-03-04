@@ -42,7 +42,17 @@ const insertTemplate = async (editor, componentName) => {
 import Blits from '@lightningjs/blits'
 
 export default Blits.Component('${componentName}', {
-  // component config
+  state() {
+    return {
+      // state variables
+    }
+  },
+  hooks: {
+    ready() {
+
+      // Component is ready for interaction
+    }
+  },
 })
 </script>
 `

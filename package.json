@@ -203,6 +203,14 @@
       {
         "language": "blits",
         "path": "./snippets/blitsFile.json"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/JSFile.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/JSFile.json"
       }
     ]
   },

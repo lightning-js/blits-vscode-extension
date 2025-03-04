@@ -1,0 +1,29 @@
+{
+  "Blits Component": {
+    "prefix": "blits-file",
+    "body": [
+      "<template>",
+      "  ${1:<!-- component template -->}",
+      "</template>",
+      "",
+      "<script>",
+      "import Blits from '@lightningjs/blits'",
+      "",
+      "Blits.Component('${2:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}', {",
+      "  state() {",
+      "    return {",
+      "      // state variables",
+      "    }",
+      "  },",
+      "  hooks: {",
+      "    ready() {",
+      "       $0",
+      "      // Component is ready for interaction",
+      "    },",
+      "  },",
+      "})",
+      "</script>"
+    ],
+    "description": "Create a new Blits component"
+  }
+}
