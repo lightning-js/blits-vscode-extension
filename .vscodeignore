@@ -29,6 +29,7 @@ appveyor.yml
 azure-pipelines.yml
 package-lock.json
 yarn.lock
+.eslintignore
 
 # Build artifacts
 *.vsix
