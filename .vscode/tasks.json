@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "esbuild: watch",
+      "type": "shell",
+      "command": "npx esbuild ./src/extension.js --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

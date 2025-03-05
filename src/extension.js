@@ -26,6 +26,7 @@ const { registerHoverProvider } = require('./blitsFile/hoverProvider')
 const { registerCompletionProvider } = require('./blitsFile/completionProvider')
 const { registerSignatureHelpProvider } = require('./blitsFile/signatureHelpProvider')
 // const { registerCodeActionsProvider } = require('./blitsFile/codeActionsProvider') // not working yet
+const fileTemplateProvider = require('./blitsFile/fileTemplateProvider')
 const { getLanguageServiceInstance } = require('./blitsFile/languageService')
 const packageJSON = require('../package.json')
 
@@ -64,6 +65,9 @@ async function activate(context) {
     const diagnosticsCollection = vscode.languages.createDiagnosticCollection('blits-template')
     context.subscriptions.push(diagnosticsCollection)
     checkForLoopIndexAsKey(context, diagnosticsCollection)
+
+    // blits file template
+    fileTemplateProvider(context)
 
     // extension activated
     vscode.window.showInformationMessage(`Lightning Blits v${packageJSON.version} has been activated!`)
