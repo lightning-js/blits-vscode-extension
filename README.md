@@ -4,6 +4,14 @@ This is the official VSCode extension for the Lightning Blits framework.
 
 Blits is a **lightweight, high-performance frontend framework** for **Lightning 3 applications**. This VSCode extension enhances the development experience by providing **rich language support** for Blits templates, components, and the `.blits` file format.
 
+## Usage
+Once installed, the extension will automatically detect and provide **language support** for:
+- `.blits` files.
+- Blits templates inside JavaScript and TypeScript files in Blits apps.
+
+### **Commands & Shortcuts**
+- **Toggle Comment** (`Ctrl + /` / `Cmd + /` on Mac): Comment/uncomment Blits template sections.
+
 ## Features
 
 ### **1. Syntax Highlighting**
@@ -27,64 +35,52 @@ Blits is a **lightweight, high-performance frontend framework** for **Lightning 
   - **Hover information** for component props and attributes
   - **Error diagnostics** for template syntax
 
-### **5. Code Formatting**
+### **5. Code Snippets**
+Enhance your coding efficiency with built-in snippets for Blits development. These snippets provide templates for common structures and patterns in Blits applications, helping you write code more quickly and consistently across JavaScript, TypeScript, and `.blits` files.
+
+| Snippet Prefix | Description |
+|----------------|-------------|
+| `blits-file` | Creates a basic `.blits` file structure with template and script sections |
+| `blits-component` | Scaffolds a complete Blits component structure in JS/TS files |
+| `blits-input` | Adds customizable input handler methods with selectable key options |
+| `blits-input-block` | Inserts a complete input object with handlers for all common keys |
+| `blits-hooks` | Adds individual lifecycle hook methods with method selection |
+| `blits-hooks-block` | Inserts all major lifecycle hooks at once (init, ready, focus, unfocus, destroy) |
+| `blits-attribute-transition` | Creates attribute transition syntax for animations in template strings |
+
+I'll reformat the "Code Formatting" section to make it more organized and easier to follow, without changing the content itself:
+
+### **6. Code Formatting**
 - Automatic formatting of **Blits template strings** inside JS/TS files.
 - Auto-formats **entire `.blits` files on save**.
 - Configurable **Prettier-based** formatting settings.
 
 You can disable the auto-formatting feature by setting the `blits.autoFormat` configuration option to `false`.
 
-The extension provides several configuration options to customize the auto-formatting feature. These settings allow you to tailor the formatting to your coding style and preferences.
-
 #### Available Settings
 
-###### Print Width (`blits.format.printWidth`): 120
-The line length that the printer will wrap on.
+The extension provides several configuration options to customize the formatting experience:
 
-###### Tab Width (`blits.format.tabWidth`): 2
-Indentation size.
-
-###### Indent with Tabs (`blits.format.useTabs`): `false`
-When `true`, indents with tabs instead of spaces.
-
-###### Print Semicolons (`blits.format.semi`): `false`
-Print semicolons at the ends of statements.
-
-###### Use Single Quotes (`blits.format.singleQuote`): `true`
-Use single quotes instead of double quotes.
-
-###### Quoting Props (`blits.format.quoteProps`): `as-needed`
-When `as-needed`, adds quotes around object properties where required.
-When `consistent`, adds quotes around object properties where required, but only if your file contains a mix of quoted and unquoted properties.
-When `preserve`, keeps object properties unquoted.
-
-###### Trailing Comma (`blits.format.trailingComma`): `all`
-When `all`, adds trailing commas wherever possible.
-When `none`, removes trailing commas.
-When `es5`, adds trailing commas wherever possible, but avoids adding trailing commas to function parameters.
-
-###### Bracket Spacing (`blits.format.bracketSpacing`): `true`
-Print spaces between brackets in object literals.
-
-###### Bracket Same Line (`blits.format.bracketSameLine`): `false`
-Put the `>` of a multi-line tag at the end of the last line instead of being alone on the next line.
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `blits.format.printWidth` | `120` | The line length that the printer will wrap on |
+| `blits.format.tabWidth` | `2` | Indentation size |
+| `blits.format.useTabs` | `false` | When `true`, indents with tabs instead of spaces |
+| `blits.format.semi` | `false` | Print semicolons at the ends of statements |
+| `blits.format.singleQuote` | `true` | Use single quotes instead of double quotes |
+| `blits.format.quoteProps` | `as-needed` | Controls when to quote object properties:<br>• `as-needed`: Only when required<br>• `consistent`: If any property requires quotes<br>• `preserve`: Respects original formatting |
+| `blits.format.trailingComma` | `all` | Controls trailing commas:<br>• `all`: Add wherever possible<br>• `none`: Remove all trailing commas<br>• `es5`: Add except in function parameters |
+| `blits.format.bracketSpacing` | `true` | Print spaces between brackets in object literals |
+| `blits.format.bracketSameLine` | `false` | Put the `>` of a multi-line tag at the end of the last line |
 
 #### Customizing Settings
 
-To customize these settings, you can either modify the `.vscode/settings.json` file directly or use the VSCode settings UI. To do this using the settings UI, follow these steps:
+To customize these settings:
+1. Open VSCode settings (File > Preferences > Settings or `Ctrl+,` / `Cmd+,` on Mac)
+2. Search for `Blits` to find all relevant settings
+3. Modify as needed - changes will be applied immediately
 
-- Open your VSCode settings (either user or workspace settings).
-- Search for `Blits` to find all the relevant settings for the Blits extension.
-- Modify the settings as needed. Changes will be applied immediately.
-
-
-## Usage
-Once installed, the extension will automatically detect and provide **language support** for:
-- `.blits` files.
-- Blits templates inside JavaScript and TypeScript files in Blits apps.
-
-### **Commands & Shortcuts**
-- **Toggle Comment** (`Ctrl + /` / `Cmd + /` on Mac): Comment/uncomment Blits template sections.
+You can also edit the `.vscode/settings.json` file directly to configure these options.
 
 ## Feedback & Contributions
 This extension is **open-source**. If you encounter issues or have feature requests, please visit the [GitHub Repository](https://github.com/lightning-js/blits-vscode-extension) and submit an issue or contribute to the codebase.

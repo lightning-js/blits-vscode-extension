@@ -1,14 +1,36 @@
 .vscode/**
 .vscode-test/**
+src/**
+scripts/**
 test/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/jsconfig.json
 **/*.map
-**/.eslintrc.json
-.github
 backup
 *.vsix
 *.zip
 .vscode-test/**
+
+# Source control
+.gitignore
+.yarnrc
+**/tsconfig.json
+**/jsconfig.json
+**/.eslintrc.json
+**/*.map
+**/*.ts
+
+# Exclude node_modules since we're bundling dependencies
+node_modules/**
+
+# Development files
+.github/**
+.travis.yml
+.gitlab-ci.yml
+appveyor.yml
+azure-pipelines.yml
+package-lock.json
+yarn.lock
+.eslintignore
+
+# Build artifacts
+*.vsix
+*.vsix.zip

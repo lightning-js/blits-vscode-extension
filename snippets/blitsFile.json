@@ -1,0 +1,36 @@
+{
+  "Blits Component": {
+    "prefix": "blits-file",
+    "body": [
+      "<template>",
+      "  ${1:<!-- component template -->}",
+      "</template>",
+      "",
+      "<script>",
+      "import Blits from '@lightningjs/blits'",
+      "",
+      "Blits.Component('${2:${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/}}', {",
+      "  state() {",
+      "    return {",
+      "      // state variables",
+      "    }",
+      "  },",
+      "  hooks: {",
+      "    ready() {",
+      "       $0",
+      "      // Component is ready for interaction",
+      "    },",
+      "  },",
+      "})",
+      "</script>"
+    ],
+    "description": "Create a new Blits component"
+  },
+  "Blits Attribute Transition": {
+    "prefix": "blits-attribute-transition",
+    "body": [
+      ":${1|x,y,alpha,rotation,scale,color,w,h|}.transition=\"{value: \\$${2:value}, duration: ${3:300}, easing: '${4|ease-in,ease-out,ease-in-out,ease-in-sine,ease-out-sine,ease-in-out-sine,ease-in-cubic,ease-out-cubic,ease-in-out-cubic,ease-in-circ,ease-out-circ,ease-in-out-circ,ease-in-back,ease-out-back,ease-in-out-back|}', delay: ${5:0}}\""
+    ],
+    "description": "Add a transition to an attribute in Blits template"
+  }
+}
