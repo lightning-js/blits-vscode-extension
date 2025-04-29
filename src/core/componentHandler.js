@@ -235,13 +235,31 @@ const _parseProps = (propsNode) => {
               cast: 'String',
             })
           } else if (element.type === 'ObjectExpression') {
-            const prop = _parseObjectProp(element)
+            const prop = _parseArrayObjectProp(element)
             if (prop.key) {
               standardizedProps.push(prop)
             }
           }
         } catch (e) {
           console.error(`Error processing prop at index ${index}:`, e)
+        }
+      })
+    }
+    // Handle object-based props (new format)
+    else if (propsNode.type === 'ObjectExpression' && Array.isArray(propsNode.properties)) {
+      propsNode.properties.forEach((property, index) => {
+        if (!property) return
+
+        try {
+          const propName = _safeGet(property, 'key', 'name') || _safeGet(property, 'key', 'value')
+          if (!propName) return
+
+          const prop = _parseObjectPropValue(property)
+          if (prop.key) {
+            standardizedProps.push(prop)
+          }
+        } catch (e) {
+          console.error(`Error processing object prop at index ${index}:`, e)
         }
       })
     }
@@ -252,7 +270,99 @@ const _parseProps = (propsNode) => {
   return standardizedProps
 }
 
-const _parseObjectProp = (element) => {
+// Parse JSDoc comments to extract type and default value information
+const _parseJSDocComment = (leadingComments) => {
+  if (!leadingComments || !Array.isArray(leadingComments) || leadingComments.length === 0) {
+    return { type: null, defaultValue: null }
+  }
+
+  const comment = leadingComments[0].value
+
+  // Extract @type annotation
+  const typeMatch = comment.match(/@type\s+\{([^}]+)\}/)
+  const type = typeMatch ? typeMatch[1].trim() : null
+
+  // Extract @default annotation
+  const defaultMatch = comment.match(/@default\s+(.+)(\r?\n|$)/)
+  const defaultValue = defaultMatch ? defaultMatch[1].trim().replace(/^['"](.*)['"]$/, '$1') : null
+
+  return {
+    type,
+    defaultValue,
+  }
+}
+
+// Parse object-based prop value (new format)
+const _parseObjectPropValue = (property) => {
+  const propName = _safeGet(property, 'key', 'name') || _safeGet(property, 'key', 'value')
+  const valueNode = property.value
+
+  const prop = {
+    key: propName,
+    default: null,
+    required: false,
+    cast: 'String', // Default type
+  }
+
+  // Extract default value from the property value
+  if (valueNode) {
+    if (valueNode.type === 'StringLiteral') {
+      prop.default = valueNode.value
+      prop.cast = 'String'
+    } else if (valueNode.type === 'NumericLiteral') {
+      prop.default = valueNode.value
+      prop.cast = 'Number'
+    } else if (valueNode.type === 'BooleanLiteral') {
+      prop.default = valueNode.value
+      prop.cast = 'Boolean'
+    } else if (valueNode.type === 'NullLiteral') {
+      prop.default = null
+    } else if (valueNode.type === 'Identifier' && valueNode.name === 'undefined') {
+      prop.default = null
+    }
+  }
+
+  // Parse JSDoc comments if available
+  if (property.leadingComments) {
+    const { type, defaultValue } = _parseJSDocComment(property.leadingComments)
+
+    // Override type from JSDoc if available
+    if (type) {
+      // Map common type names to Blits cast types
+      const typeMap = {
+        string: 'String',
+        number: 'Number',
+        boolean: 'Boolean',
+        object: 'Object',
+        array: 'Array',
+        function: 'Function',
+      }
+
+      prop.cast = typeMap[type.toLowerCase()] || type
+    }
+
+    // Use JSDoc default value if no literal value is provided
+    if (defaultValue !== null && prop.default === null) {
+      // Try to convert the default value to the appropriate type
+      if (prop.cast === 'Number') {
+        const num = Number(defaultValue)
+        prop.default = isNaN(num) ? defaultValue : num
+      } else if (prop.cast === 'Boolean') {
+        prop.default = defaultValue === 'true'
+      } else {
+        prop.default = defaultValue
+      }
+    }
+  }
+
+  // If the property has a value that's not undefined, it's not required
+  prop.required = prop.default === null && valueNode.type === 'Identifier' && valueNode.name === 'undefined'
+
+  return prop
+}
+
+// Parse object prop in array format (original format)
+const _parseArrayObjectProp = (element) => {
   const prop = {
     key: '',
     default: null,
