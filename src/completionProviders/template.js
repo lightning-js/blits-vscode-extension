@@ -68,6 +68,9 @@ module.exports = vscode.languages.registerCompletionItemProvider(
       // For custom components, get their props + Element attributes
       return await componentProps.suggest(context.tagName, context.attributes, document)
     },
+    resolveCompletionItem(item) {
+      return item
+    },
   },
   '<',
   ':',
