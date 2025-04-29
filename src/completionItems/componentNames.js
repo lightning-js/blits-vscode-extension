@@ -158,10 +158,10 @@ const suggest = async (componentData) => {
     registeredComponents.forEach((comp) => {
       const item = new vscode.CompletionItem(comp.name, vscode.CompletionItemKind.Class)
       if (comp.props.length > 0) {
-        item.documentation = new vscode.MarkdownString()
-        item.documentation.appendMarkdown(`\`${comp.name}\` has the following properties:\n\n`)
+        let docs = new vscode.MarkdownString()
+        docs.appendMarkdown(`\`${comp.name}\` has the following properties:\n\n`)
         comp.props.forEach((prop) => {
-          item.documentation.appendCodeblock(
+          docs.appendCodeblock(
             `${prop.key}: {
   type: ${prop.cast},
   default: ${prop.default ? prop.default : '-'},
@@ -170,6 +170,8 @@ const suggest = async (componentData) => {
             'javascript'
           )
         })
+
+        item.documentation = docs
       }
       item.sortText = `1-${comp.name}`
       item.detail = `Custom component: <${comp.name}>`
