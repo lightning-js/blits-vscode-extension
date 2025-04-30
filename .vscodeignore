@@ -8,6 +8,7 @@ backup
 *.vsix
 *.zip
 .vscode-test/**
+src/parsers/testParser.js
 
 # Source control
 .gitignore
