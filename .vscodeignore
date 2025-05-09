@@ -8,6 +8,7 @@ backup
 *.vsix
 *.zip
 .vscode-test/**
+src/parsers/testParser.js
 
 # Source control
 .gitignore
@@ -34,3 +35,6 @@ yarn.lock
 # Build artifacts
 *.vsix
 *.vsix.zip
+
+# typescript standard libs
+!out/lib-files/*

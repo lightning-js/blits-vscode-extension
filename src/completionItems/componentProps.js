@@ -36,10 +36,18 @@ const createCompletionItems = (props, existingAttributes, tag) => {
       const doc = new vscode.MarkdownString()
       doc.isTrusted = true // Enable trusted rendering
 
+      // Use the detailed TypeScript type if available, otherwise fallback to standard cast
+      let typeDisplay = prop.rawTypeName || prop.cast
+
+      // Only lowercase standard types (String, Number, etc.) but preserve custom type names
+      if (['String', 'Number', 'Boolean', 'Array', 'Object', 'Function'].includes(typeDisplay)) {
+        typeDisplay = typeDisplay.toLowerCase()
+      }
+
       // Properly display attribute, type, and default value
       doc.appendMarkdown(
-        `\`\`\`ts\n${prop.key}: ${prop.cast.toLowerCase()}${
-          prop.default !== undefined ? ` = ${prop.default}` : ''
+        `\`\`\`ts\n${prop.key}: ${typeDisplay}${
+          prop.default !== undefined && prop.default !== null ? ` = ${prop.default}` : ''
         }\n\`\`\``
       )
 

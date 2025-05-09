@@ -30,7 +30,7 @@
       "  ${1|left,right,up,down,enter,back,space,any|}(${2:e}) {",
       "    $0",
       "  },",
-      "  ${3|left,right,up,down,enter,back,space,any|}(${4:e}) {",
+      "  ${3|right,left,up,down,enter,back,space,any|}(${4:e}) {",
       "    // Handle input",
       "  }${5:,}",
       "}"

@@ -40,6 +40,7 @@ const suggest = async (componentData) => {
 
   const element = new vscode.CompletionItem('Element', vscode.CompletionItemKind.Class)
   const elementDocs = new vscode.MarkdownString()
+  elementDocs.isTrusted = true // Enable trusted rendering
   elementDocs.appendMarkdown('Core building block of a Blits template that represents a Lightning 3 Renderer node.\n\n')
   elementDocs.appendCodeblock('<Element x="10" y="20" color="#ff0000" />', 'xml')
   elementDocs.appendCodeblock(
@@ -57,6 +58,7 @@ const suggest = async (componentData) => {
 
   const layout = new vscode.CompletionItem('Layout', vscode.CompletionItemKind.Class)
   const layoutDocs = new vscode.MarkdownString()
+  layoutDocs.isTrusted = true // Enable trusted rendering
   layoutDocs.appendMarkdown(
     'Automatically positions child elements in a horizontal or vertical layout with customizable spacing and alignment.\n\n'
   )
@@ -92,6 +94,7 @@ const suggest = async (componentData) => {
   // Text Component
   const text = new vscode.CompletionItem('Text', vscode.CompletionItemKind.Class)
   const textDocs = new vscode.MarkdownString()
+  textDocs.isTrusted = true // Enable trusted rendering
   textDocs.appendMarkdown('Core built-in component for and styling texts in a simple and intuitive way.\n\n')
   textDocs.appendCodeblock(
     `<Text
@@ -111,7 +114,8 @@ const suggest = async (componentData) => {
 
   // RouterView Component
   const routerView = new vscode.CompletionItem('RouterView', vscode.CompletionItemKind.Class)
-  const routerViewDocs = new vscode.MarkdownString()
+  let routerViewDocs = new vscode.MarkdownString()
+  routerViewDocs.isTrusted = true // Enable trusted rendering
   routerViewDocs.appendMarkdown(
     'Acts as a placeholder component that displays the currently active route component. Pages are rendered inside RouterView based on the current route.\n\n'
   )
@@ -158,10 +162,11 @@ const suggest = async (componentData) => {
     registeredComponents.forEach((comp) => {
       const item = new vscode.CompletionItem(comp.name, vscode.CompletionItemKind.Class)
       if (comp.props.length > 0) {
-        item.documentation = new vscode.MarkdownString()
-        item.documentation.appendMarkdown(`\`${comp.name}\` has the following properties:\n\n`)
+        let docs = new vscode.MarkdownString()
+        docs.isTrusted = true // Enable trusted rendering
+        docs.appendMarkdown(`\`${comp.name}\` has the following properties:\n\n`)
         comp.props.forEach((prop) => {
-          item.documentation.appendCodeblock(
+          docs.appendCodeblock(
             `${prop.key}: {
   type: ${prop.cast},
   default: ${prop.default ? prop.default : '-'},
@@ -170,6 +175,8 @@ const suggest = async (componentData) => {
             'javascript'
           )
         })
+
+        item.documentation = docs
       }
       item.sortText = `1-${comp.name}`
       item.detail = `Custom component: <${comp.name}>`
