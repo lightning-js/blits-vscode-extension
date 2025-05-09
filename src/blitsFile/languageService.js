@@ -23,20 +23,32 @@ const { getAllVirtualFiles, addVirtualFile, getVirtualFile } = require('./virtua
 const compilerOptions = require('./config/compilerOptions')
 const { extractScriptContent } = require('./utils/scriptExtractor')
 const { getVirtualFileName } = require('./utils/fileNameGenerator')
+const { getLibFilesForTarget, getTsLibPath } = require('./utils/libFilesLoader')
 
 let jsLanguageService = null
 let tsLanguageService = null
 
 function createLanguageServiceHost(options) {
+  // Load TypeScript lib files based on the target in compiler options
+  const targetName = ts.ScriptTarget[options.target] || 'ES2020'
+  const libFiles = getLibFilesForTarget(targetName)
+  const libFileNames = Array.from(libFiles.keys())
+
   return {
     getScriptFileNames: () => {
       const scriptFiles = vscode.workspace.textDocuments
         .filter((doc) => ['javascript', 'typescript', 'blits'].includes(doc.languageId))
         .map((doc) => doc.uri.fsPath)
       const blitsFiles = Array.from(getAllVirtualFiles().keys())
-      return [...scriptFiles, ...blitsFiles]
+      // Include lib files in the script files list
+      return [...scriptFiles, ...blitsFiles, ...libFileNames]
     },
     getScriptVersion: (fileName) => {
+      // Lib files version never changes
+      if (libFiles.has(fileName)) {
+        return '1'
+      }
+
       const virtualFile = getVirtualFile(fileName)
       if (virtualFile) {
         return virtualFile.version.toString()
@@ -45,6 +57,11 @@ function createLanguageServiceHost(options) {
       return doc ? doc.version.toString() : '1'
     },
     getScriptSnapshot: (fileName) => {
+      // For lib files, return the cached content
+      if (libFiles.has(fileName)) {
+        return ts.ScriptSnapshot.fromString(libFiles.get(fileName))
+      }
+
       let content
 
       if (path.extname(fileName) === '.blits') {
@@ -57,36 +74,97 @@ function createLanguageServiceHost(options) {
         if (virtualFile) {
           content = virtualFile.content
         } else if (fs.existsSync(fileName)) {
-          content = fs.readFileSync(fileName, 'utf8')
+          try {
+            content = fs.readFileSync(fileName, 'utf8')
+          } catch (error) {
+            console.error(`Error reading file ${fileName}:`, error)
+            return undefined
+          }
         }
       }
 
       return content ? ts.ScriptSnapshot.fromString(content) : undefined
     },
-    getCurrentDirectory: () => vscode.workspace.workspaceFolders[0].uri.fsPath,
+    getCurrentDirectory: () => {
+      return vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+        ? vscode.workspace.workspaceFolders[0].uri.fsPath
+        : process.cwd()
+    },
     getCompilationSettings: () => options,
-    getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
-    fileExists: ts.sys.fileExists,
-    readFile: ts.sys.readFile,
+    getDefaultLibFileName: (options) => {
+      const tsLibPath = getTsLibPath()
+      if (tsLibPath) {
+        return path.join(tsLibPath, ts.getDefaultLibFileName(options))
+      }
+      return ts.getDefaultLibFilePath(options)
+    },
+    fileExists: (fileName) => {
+      // Lib files always exist
+      if (libFiles.has(fileName)) {
+        return true
+      }
+
+      // Check virtual files
+      if (getVirtualFile(fileName)) {
+        return true
+      }
+
+      // Check real files
+      return ts.sys.fileExists(fileName)
+    },
+    readFile: (fileName) => {
+      // For lib files, return the cached content
+      if (libFiles.has(fileName)) {
+        return libFiles.get(fileName)
+      }
+
+      // Check virtual files
+      const virtualFile = getVirtualFile(fileName)
+      if (virtualFile) {
+        return virtualFile.content
+      }
+
+      // Check real files
+      try {
+        return ts.sys.readFile(fileName)
+      } catch (error) {
+        console.error(`Error reading file ${fileName}:`, error)
+        return undefined
+      }
+    },
     readDirectory: ts.sys.readDirectory,
     directoryExists: ts.sys.directoryExists,
     getDirectories: ts.sys.getDirectories,
     resolveModuleNames: (moduleNames, containingFile) => {
+      // Get the appropriate compiler options based on the file extension
       const currentCompilerOptions =
         path.extname(containingFile) === '.ts'
           ? compilerOptions.getTsCompilerOptions()
           : compilerOptions.getJsCompilerOptions()
 
       return moduleNames.map((moduleName) => {
+        // Try to use TypeScript's resolver first
         const result = ts.resolveModuleName(moduleName, containingFile, currentCompilerOptions, {
-          fileExists: ts.sys.fileExists,
-          readFile: ts.sys.readFile,
+          fileExists: (fileName) => {
+            if (libFiles.has(fileName)) return true
+            if (getVirtualFile(fileName)) return true
+            return ts.sys.fileExists(fileName)
+          },
+          readFile: (fileName) => {
+            if (libFiles.has(fileName)) return libFiles.get(fileName)
+            const virtualFile = getVirtualFile(fileName)
+            if (virtualFile) return virtualFile.content
+            return ts.sys.readFile(fileName)
+          },
+          directoryExists: ts.sys.directoryExists,
+          getCurrentDirectory: () => currentCompilerOptions.baseUrl || process.cwd(),
         })
 
         if (result.resolvedModule) {
           return result.resolvedModule
         }
 
+        // Handle .blits files
         const blitsExtension = '.blits'
         if (moduleName.endsWith(blitsExtension)) {
           const fullPath = path.resolve(path.dirname(containingFile), moduleName)
@@ -100,6 +178,7 @@ function createLanguageServiceHost(options) {
           }
         }
 
+        // Try to find .blits extension if none is specified
         const blitsPath = path.resolve(path.dirname(containingFile), moduleName + blitsExtension)
         if (ts.sys.fileExists(blitsPath)) {
           const { lang } = getOrCreateVirtualDocument(blitsPath) || {}
@@ -108,6 +187,66 @@ function createLanguageServiceHost(options) {
             return { resolvedFileName: virtualFileName, extension: `.${lang}`, isExternalLibraryImport: false }
           }
           return { resolvedFileName: blitsPath, extension: blitsExtension, isExternalLibraryImport: false }
+        }
+
+        // Handle path aliases (from tsconfig/jsconfig)
+        try {
+          if (moduleName.startsWith('@') && currentCompilerOptions.paths) {
+            // Find the base URL - default to the directory containing the config file
+            const baseUrl = currentCompilerOptions.baseUrl || process.cwd()
+
+            // Check each path pattern
+            for (const [pattern, targets] of Object.entries(currentCompilerOptions.paths)) {
+              // Convert glob pattern to regex
+              const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '(.*)') + '$')
+              const match = moduleName.match(regexPattern)
+
+              if (match && targets.length > 0) {
+                // Replace the wildcard with the matched part
+                const target = targets[0].replace(/\*/g, match[1] || '')
+
+                // Resolve the full path using baseUrl
+                const resolvedPath = path.resolve(baseUrl, target)
+
+                // Check different possible extensions
+                const extensions = ['.ts', '.tsx', '.js', '.jsx', '.blits', '']
+                for (const ext of extensions) {
+                  const fullPath = resolvedPath + ext
+                  if (fs.existsSync(fullPath)) {
+                    // If it's a .blits file, create a virtual document
+                    if (fullPath.endsWith('.blits')) {
+                      const { lang } = getOrCreateVirtualDocument(fullPath) || {}
+                      if (lang) {
+                        const virtualFileName = getVirtualFileName(vscode.Uri.file(fullPath), lang)
+                        return {
+                          resolvedFileName: virtualFileName,
+                          extension: `.${lang}`,
+                          isExternalLibraryImport: false,
+                        }
+                      }
+                    }
+
+                    // Normal case - just the filename with extension
+                    const extension = path.extname(fullPath) || '.js'
+                    return { resolvedFileName: fullPath, extension, isExternalLibraryImport: false }
+                  }
+                }
+
+                // If we find a directory, look for index files
+                if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
+                  for (const ext of extensions) {
+                    const indexPath = path.join(resolvedPath, 'index' + ext)
+                    if (fs.existsSync(indexPath)) {
+                      const extension = path.extname(indexPath) || '.js'
+                      return { resolvedFileName: indexPath, extension, isExternalLibraryImport: false }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error resolving path alias for ${moduleName}:`, error)
         }
 
         return undefined
@@ -149,22 +288,33 @@ function getLanguageService(fileName) {
 }
 
 function getOrCreateVirtualDocument(fileName) {
-  const uri = vscode.Uri.file(fileName)
-  const content = fs.readFileSync(fileName, 'utf8')
-  const scriptInfo = extractScriptContent(content)
+  try {
+    const uri = vscode.Uri.file(fileName)
 
-  if (!scriptInfo) return null
+    // Check if the file exists
+    if (!fs.existsSync(fileName)) {
+      return null
+    }
 
-  const { lang, content: scriptContent } = scriptInfo
-  const virtualFileName = getVirtualFileName(uri, lang)
-  let virtualFile = getVirtualFile(virtualFileName)
+    const content = fs.readFileSync(fileName, 'utf8')
+    const scriptInfo = extractScriptContent(content)
 
-  if (!virtualFile) {
-    addVirtualFile(virtualFileName, scriptContent, 1)
-    virtualFile = { content: scriptContent, version: 1 }
+    if (!scriptInfo) return null
+
+    const { lang, content: scriptContent } = scriptInfo
+    const virtualFileName = getVirtualFileName(uri, lang)
+    let virtualFile = getVirtualFile(virtualFileName)
+
+    if (!virtualFile) {
+      addVirtualFile(virtualFileName, scriptContent, 1)
+      virtualFile = { content: scriptContent, version: 1 }
+    }
+
+    return { virtualFile, lang }
+  } catch (error) {
+    console.error(`Error creating virtual document for ${fileName}:`, error)
+    return null
   }
-
-  return { virtualFile, lang }
 }
 
 compilerOptions.onDidChangeCompilerOptions(() => {

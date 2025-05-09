@@ -35,3 +35,6 @@ yarn.lock
 # Build artifacts
 *.vsix
 *.vsix.zip
+
+# typescript standard libs
+!out/lib-files/*
