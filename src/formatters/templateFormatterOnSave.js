@@ -19,7 +19,6 @@ const vscode = require('vscode')
 const prettier = require('prettier')
 const documentHandler = require('../core/documentHandler')
 const workspaceHandler = require('../core/workspaceHandler')
-const templateParser = require('../parsers/templateParser/parser')
 
 const diagnosticCollection = vscode.languages.createDiagnosticCollection('blits-template')
 
@@ -104,21 +103,7 @@ async function formatDocument(document) {
     const stringChar = type === 'template-literal' ? content.slice(-1) : ''
     const templateText = type === 'template-literal' ? content.slice(1, -1) : content
     const indentation = type === 'template-literal' ? ' '.repeat(4) : ''
-    // Validate template using the custom parser.
-    const parseResult = templateParser(templateText)
-    if (!parseResult.status) {
-      const baseStart = start
-      // Create diagnostics for each range in the error
-      parseResult.error.ranges.forEach((range) => {
-        const diagnostic = new vscode.Diagnostic(
-          new vscode.Range(document.positionAt(baseStart + range.start), document.positionAt(baseStart + range.end)),
-          parseResult.error.info,
-          vscode.DiagnosticSeverity.Error
-        )
-        allDiagnostics.push(diagnostic)
-      })
-      return // Skip formatting this template.
-    }
+
     // Format template if no parser errors occur.
     try {
       const formattedTemplate = formatTemplate(templateText, 'angular', indentation)
