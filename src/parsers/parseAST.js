@@ -33,11 +33,16 @@ module.exports = (code, fileExtension) => {
   }
 
   try {
-    return parser.parse(code, {
+    const ast = parser.parse(code, {
       sourceType: 'module',
       plugins: pluginList,
       errorRecovery: true,
     })
+
+    if (!ast || !ast.program || !ast.program.body) {
+      return null
+    }
+    return ast
   } catch (e) {
     console.error('Error parsing AST:', e)
     return null

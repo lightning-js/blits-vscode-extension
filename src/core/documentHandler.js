@@ -27,7 +27,8 @@ const getASTForDocument = (document) => {
     return parseAST(content, language)
   }
 
-  return parseAST(currentDoc, document.uri.fsPath.split('.').pop())
+  const AST = parseAST(currentDoc, document.uri.fsPath.split('.').pop())
+  return AST
 }
 
 const getAllTemplates = (document) => {
@@ -125,72 +126,180 @@ const getBlitsFileContent = (document) => {
 }
 
 const getAllComponentTemplates = (ast, sourceCode) => {
+  // Return early if AST is invalid
+  if (!ast || !ast.program) {
+    console.warn('Invalid AST provided to getAllComponentTemplates')
+    return []
+  }
+
   const ranges = []
   const processedRanges = new Set()
 
-  traverse(ast, {
-    // Handle Blits.Component and Blits.Application calls
-    CallExpression(path) {
-      const callee = path.node.callee
+  try {
+    traverse(ast, {
+      // Handle Blits.Component and Blits.Application calls
+      CallExpression(path) {
+        try {
+          const { node } = path
+          if (!node || !node.callee) return
 
-      if (
-        callee.type === 'MemberExpression' &&
-        callee.object.type === 'Identifier' &&
-        callee.object.name === 'Blits' &&
-        callee.property.type === 'Identifier' &&
-        (callee.property.name === 'Component' || callee.property.name === 'Application')
-      ) {
-        const configArgIndex = callee.property.name === 'Component' ? 1 : 0
-        if (path.node.arguments.length <= configArgIndex) return
+          // Type guard for MemberExpression
+          if (node.callee.type !== 'MemberExpression') return
 
-        const configObject = path.node.arguments[configArgIndex]
-        if (configObject.type !== 'ObjectExpression') return
+          // Now TypeScript knows callee is a MemberExpression and has object and property
+          const { object, property } = node.callee
 
-        configObject.properties.forEach((prop) => {
-          if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier' && prop.key.name === 'template') {
-            let unwrapped = null
-            if (prop.value.type === 'TemplateLiteral') {
-              unwrapped = prop.value.quasis[0].value.raw
-            } else if (prop.value.type === 'StringLiteral') {
-              unwrapped = prop.value.value
-            }
-            if (unwrapped !== null) {
-              // Add range to Set to track processed ranges
-              processedRanges.add(`${prop.value.start}-${prop.value.end}`)
-              ranges.push({
-                start: prop.value.start,
-                end: prop.value.end,
-                content: sourceCode ? sourceCode.substring(prop.value.start, prop.value.end) : null,
-              })
-            }
-          }
-        })
-      }
-    },
+          // Type guard for Identifier
+          if (object.type !== 'Identifier' || property.type !== 'Identifier') return
 
-    // Handle any object with a template property
-    ObjectExpression(path) {
-      path.node.properties.forEach((prop) => {
-        if (prop.type === 'ObjectProperty' && prop.key.type === 'Identifier' && prop.key.name === 'template') {
-          let unwrapped = null
-          if (prop.value.type === 'TemplateLiteral') {
-            unwrapped = prop.value.quasis[0].value.raw
-          } else if (prop.value.type === 'StringLiteral') {
-            unwrapped = prop.value.value
-          }
-          // Only process if range hasn't been processed and template is valid
-          const rangeKey = `${prop.value.start}-${prop.value.end}`
-          if (unwrapped !== null && !processedRanges.has(rangeKey) && _isValidTemplateString(unwrapped)) {
-            ranges.push({
-              start: prop.value.start,
-              end: prop.value.end,
-              content: sourceCode ? sourceCode.substring(prop.value.start, prop.value.end) : null,
+          if (object.name === 'Blits' && (property.name === 'Component' || property.name === 'Application')) {
+            const configArgIndex = property.name === 'Component' ? 1 : 0
+            if (!node.arguments || node.arguments.length <= configArgIndex) return
+
+            const configObject = node.arguments[configArgIndex]
+            if (!configObject || configObject.type !== 'ObjectExpression') return
+
+            // Safely iterate through properties
+            if (!configObject.properties || !Array.isArray(configObject.properties)) return
+
+            configObject.properties.forEach((prop) => {
+              try {
+                // Type guard for ObjectProperty
+                if (prop.type !== 'ObjectProperty') return
+
+                // Type guard for Identifier
+                if (prop.key.type !== 'Identifier') return
+
+                if (prop.key.name === 'template') {
+                  let unwrapped = null
+
+                  // Handle TemplateLiteral
+                  if (
+                    prop.value.type === 'TemplateLiteral' &&
+                    prop.value.quasis &&
+                    prop.value.quasis.length > 0 &&
+                    prop.value.quasis[0].value
+                  ) {
+                    unwrapped = prop.value.quasis[0].value.raw
+                  }
+                  // Handle StringLiteral
+                  else if (prop.value.type === 'StringLiteral') {
+                    unwrapped = prop.value.value
+                  }
+
+                  if (
+                    unwrapped !== null &&
+                    typeof prop.value.start === 'number' &&
+                    typeof prop.value.end === 'number'
+                  ) {
+                    const rangeKey = `${prop.value.start}-${prop.value.end}`
+                    processedRanges.add(rangeKey)
+
+                    // Safely get content
+                    let content = null
+                    if (sourceCode && typeof sourceCode === 'string') {
+                      try {
+                        content = sourceCode.substring(prop.value.start, prop.value.end)
+                      } catch (e) {
+                        console.warn('Error extracting source content:', e)
+                      }
+                    }
+
+                    ranges.push({
+                      start: prop.value.start,
+                      end: prop.value.end,
+                      content: content,
+                    })
+                  }
+                }
+              } catch (propError) {
+                console.warn('Error processing property:', propError)
+                // Continue to next property
+              }
             })
           }
+        } catch (visitorError) {
+          console.warn('Error in CallExpression visitor:', visitorError)
+          // Continue traversal
         }
-      })
-    },
-  })
+      },
+
+      // Handle any object with a template property
+      ObjectExpression(path) {
+        try {
+          const { node } = path
+          if (!node || !node.properties || !Array.isArray(node.properties)) return
+
+          node.properties.forEach((prop) => {
+            try {
+              // Type guard for ObjectProperty
+              if (prop.type !== 'ObjectProperty') return
+
+              // Type guard for Identifier
+              if (prop.key.type !== 'Identifier') return
+
+              if (prop.key.name === 'template') {
+                let unwrapped = null
+
+                // Handle TemplateLiteral
+                if (
+                  prop.value.type === 'TemplateLiteral' &&
+                  prop.value.quasis &&
+                  prop.value.quasis.length > 0 &&
+                  prop.value.quasis[0].value
+                ) {
+                  unwrapped = prop.value.quasis[0].value.raw
+                }
+                // Handle StringLiteral
+                else if (prop.value.type === 'StringLiteral') {
+                  unwrapped = prop.value.value
+                }
+
+                // Only process if range hasn't been processed and template is valid
+                if (unwrapped !== null && typeof prop.value.start === 'number' && typeof prop.value.end === 'number') {
+                  const rangeKey = `${prop.value.start}-${prop.value.end}`
+
+                  if (!processedRanges.has(rangeKey)) {
+                    try {
+                      if (_isValidTemplateString(unwrapped)) {
+                        // Safely get content
+                        let content = null
+                        if (sourceCode && typeof sourceCode === 'string') {
+                          try {
+                            content = sourceCode.substring(prop.value.start, prop.value.end)
+                          } catch (e) {
+                            console.warn('Error extracting source content:', e)
+                          }
+                        }
+
+                        processedRanges.add(rangeKey)
+                        ranges.push({
+                          start: prop.value.start,
+                          end: prop.value.end,
+                          content: content,
+                        })
+                      }
+                    } catch (templateValidationError) {
+                      console.warn('Error validating template string:', templateValidationError)
+                    }
+                  }
+                }
+              }
+            } catch (propError) {
+              console.warn('Error processing property in ObjectExpression:', propError)
+              // Continue to next property
+            }
+          })
+        } catch (visitorError) {
+          console.warn('Error in ObjectExpression visitor:', visitorError)
+          // Continue traversal
+        }
+      },
+    })
+  } catch (traversalError) {
+    console.error('Fatal error during AST traversal:', traversalError)
+    // Return whatever we've collected so far
+  }
 
   return ranges
 }
